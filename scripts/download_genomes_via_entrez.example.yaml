@@ -1,0 +1,18 @@
+email: your.email@example.org
+api_key: DUMMY_NCBI_API_KEY
+
+min_len: 7450
+max_len: 7650
+
+g2_17_tax_id: "552592"
+g2_4_tax_id: "489821"
+g2_tax_id: "122929"
+
+blacklist:
+  - KT589391.1
+
+output_dir: results/downloads
+
+g2_4_output: g2_4_full_genomes.fasta
+g2_17_output: g2_17_full_genomes.fasta
+combined_output: g2_4and17_full_genomes.fasta
