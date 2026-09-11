@@ -1,0 +1,20 @@
+outdir: results
+records_file: downloaded_records.fasta
+orf1_file: orf1.fasta
+orf2_file: orf2.fasta
+genome_file: genome.fasta
+metadata_file: metadata.tsv
+
+genbank_file: g2_17_ncbi_orf1_gb2seq.fasta
+genbank_multi_file: g2_17_ncbi_orf1_gb2seq.fasta
+consensus_file: g2_17_consensus.fasta
+similarity_topx: 5
+
+ncbi_mail: your-email@example.com
+ncbi_api_key: your-api-key
+minimum_length: 7450
+maximum_length: 7650
+g2_17_tax_id: "552592"
+g2_4_tax_id: "489821"
+g2_tax_id: "122929"
+blacklist_tax_ids: KT589391.1

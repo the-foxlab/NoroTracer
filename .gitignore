@@ -1,0 +1,33 @@
+# Local environment and secrets
+params.yaml
+.env
+.env.*
+*.pem
+*.key
+*.fasta
+*.gb 
+
+# Nextflow working files
+.nextflow/
+.nextflow.log*
+work/
+results/
+
+# Python cache and virtualenvs
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+ENV/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# OS/editor garbage
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*.bak
