@@ -12,7 +12,7 @@ applyTo: '**/*.py'
 - use pandas for data manipulation and analysis.
 - use biopython and pysam for biological sequence analysis.
 - make use of the assert statement for debugging and testing.
-- use logging for error handling and debugging.
+- always use logging for error handling and debugging.
 - create an argparse interface for command line scripts.
 - make use of context managers for resource management (e.g., file handling).
 - avoid the use of iterrows() in pandas, use vectorized operations instead.

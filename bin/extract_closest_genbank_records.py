@@ -13,7 +13,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Iterable, Sequence, cast
+from typing import Iterable, Iterator, Sequence, cast
 
 import pandas as pd
 from Bio import SeqIO
@@ -42,9 +42,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 		)
 	)
 	parser.add_argument(
-		"fastas",
+		"fasta",
 		type=Path,
-		nargs="+",
 		help="One or more FASTA files with consensus genomes.",
 	)
 	parser.add_argument(
@@ -86,9 +85,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 	parser.add_argument(
 		"--genbank-source",
 		type=Path,
+		required=True,
 		help=(
-			"Optional multi-record GenBank source file used when reference values "
-			"in the CSV are record IDs instead of file paths."
+			"Multi-record GenBank source file used to resolve selected GenBank IDs."
 		),
 	)
 	parser.add_argument(
@@ -110,9 +109,8 @@ def validate_args(args: argparse.Namespace) -> None:
 	if args.topx is not None and args.topx_range is not None:
 		raise ValueError("Use either topx or --topx-range, not both")
 
-	for fasta in args.fastas:
-		if not fasta.is_file():
-			raise FileNotFoundError(f"Input file does not exist: {fasta}")
+	if not args.fasta.is_file():
+			raise FileNotFoundError(f"Input file does not exist: {args.fasta}")
 
 	if not args.similarity_csv.is_file():
 		raise FileNotFoundError(f"Input file does not exist: {args.similarity_csv}")
@@ -126,20 +124,21 @@ def validate_args(args: argparse.Namespace) -> None:
 		if args.output_genbank is not None:
 			raise ValueError("--topx-range cannot be used with --output-genbank")
 
-	if args.genbank_source is not None and not args.genbank_source.is_file():
+	if not args.genbank_source.is_file():
 		raise FileNotFoundError(f"Input file does not exist: {args.genbank_source}")
 
 
-def read_consensus_ids(fastas: Iterable[Path]) -> set[str]:
+
+def read_consensus_ids(fasta: Path) -> set[str]:
 	"""Read all consensus IDs from FASTA input files."""
 	consensus_ids: set[str] = set()
-	for fasta in fastas:
-		count = 0
-		for record in SeqIO.parse(fasta, "fasta"):
-			consensus_ids.add(record.id)
-			count += 1
-		if count == 0:
-			raise ValueError(f"FASTA file contains no records: {fasta}")
+
+	count = 0
+	for record in SeqIO.parse(fasta, "fasta"):
+		consensus_ids.add(record.id)
+		count += 1
+	if count == 0:
+		raise ValueError(f"FASTA file contains no records: {fasta}")
 
 	if not consensus_ids:
 		raise ValueError("No consensus IDs found in FASTA inputs.")
@@ -150,25 +149,13 @@ def read_consensus_ids(fastas: Iterable[Path]) -> set[str]:
 def load_similarity_table(path: Path) -> pd.DataFrame:
 	"""Load and normalize similarity CSV columns to ref/cons/sim."""
 	df = cast(pd.DataFrame, pd.read_csv(path))
-	columns = set(df.columns)
+	if not set(df.columns) == {"consensus_id", "genbank_id", "identity"}:
+		raise ValueError(f"Unexpected CSV columns: {df.columns}")
 
-	if {"ref", "cons", "sim"}.issubset(columns):
-		normalized = cast(pd.DataFrame, df[["ref", "cons", "sim"]].copy())
-	elif {"genbank_path", "consensus_id", "identity"}.issubset(columns):
-		normalized = cast(
-			pd.DataFrame,
-			df[["genbank_path", "consensus_id", "identity"]].copy(),
-		)
-		normalized.columns = ["ref", "cons", "sim"]
-	else:
-		raise ValueError(
-			"Unsupported CSV columns. Expected either ref/cons/sim or "
-			"genbank_path/consensus_id/identity."
-		)
-
-	normalized["ref"] = normalized["ref"].astype(str)
-	normalized["cons"] = normalized["cons"].astype(str)
-	normalized["sim"] = pd.to_numeric(normalized["sim"], errors="raise")
+	normalized = cast(pd.DataFrame, df[["consensus_id", "genbank_id", "identity"]])
+	normalized["consensus_id"] = normalized["consensus_id"].astype(str)
+	normalized["genbank_id"] = normalized["genbank_id"].astype(str)
+	normalized["identity"] = pd.to_numeric(normalized["identity"], errors="raise")
 	return normalized
 
 
@@ -177,8 +164,15 @@ def select_top_references(
 ) -> set[str]:
 	"""Return unique selected references using top-X per consensus logic."""
 	dd: dict[str, list[tuple[str, float]]] = defaultdict(list)
-	filtered = cast(pd.DataFrame, similarity_df[similarity_df["cons"].isin(consensus_ids)])
-	for ref, cons, sim in filtered[["ref", "cons", "sim"]].itertuples(index=False, name=None):
+
+	LOGGER.debug("Selecting top %d references per consensus", topx)
+	LOGGER.debug("Before filtering, similarity_df has %d rows", len(similarity_df))
+
+	filtered = cast(pd.DataFrame, similarity_df[similarity_df["consensus_id"].isin(consensus_ids)])
+
+	LOGGER.debug("After filtering, similarity_df has %d rows", len(filtered))
+
+	for ref, cons, sim in filtered[["genbank_id", "consensus_id", "identity"]].itertuples(index=False, name=None):
 		dd[str(cons)].append((str(ref), float(sim)))
 
 	selected_refs = {
@@ -186,6 +180,8 @@ def select_top_references(
 		for values in dd.values()
 		for item in sorted(values, key=lambda x: -x[1])[:topx]
 	}
+	LOGGER.debug("Selected %d unique references across %d consensus sequences", len(selected_refs), len(dd))
+	
 	return selected_refs
 
 
@@ -221,41 +217,10 @@ def report_topx_range_counts(
 		LOGGER.info("topx=%d unique_genbank_entries=%d", topx, len(selected_refs))
 
 
-def _load_records_from_ref_paths(ref_paths: Iterable[str]) -> list[SeqRecord]:
-	"""Load GenBank records from selected reference file paths."""
-	records: list[SeqRecord] = []
-	for ref_path in sorted(set(ref_paths)):
-		path = Path(ref_path)
-		if not path.is_file():
-			raise FileNotFoundError(
-				f"Selected reference path from CSV does not exist: {path}"
-			)
-		parsed = list(SeqIO.parse(path, "genbank"))
-		if len(parsed) != 1:
-			raise ValueError(
-				f"Expected one GenBank record in {path}, found {len(parsed)}"
-			)
-		records.append(parsed[0])
-	return records
-
-
-def _load_records_from_source_ids(ref_ids: Iterable[str], source: Path) -> list[SeqRecord]:
-	"""Load GenBank records by record ID from a multi-record source file."""
-	records_by_id: dict[str, SeqRecord] = {}
-	for record in SeqIO.parse(source, "genbank"):
-		if record.id in records_by_id:
-			raise ValueError(f"Duplicate GenBank record ID in source file: {record.id!r}")
-		records_by_id[record.id] = record
-
-	records: list[SeqRecord] = []
-	missing: list[str] = []
-	for ref_id in sorted(set(ref_ids)):
-		record = records_by_id.get(ref_id)
-		if record is None:
-			missing.append(ref_id)
-		else:
-			records.append(record)
-
+def _validate_source_ids(ref_ids: set[str], source: Path) -> None:
+	"""Ensure all requested GenBank IDs exist in source before writing."""
+	available_ids = {record.id for record in SeqIO.parse(source, "genbank")}
+	missing = sorted(ref_ids - available_ids)
 	if missing:
 		preview = ", ".join(missing[:10])
 		raise ValueError(
@@ -263,22 +228,21 @@ def _load_records_from_source_ids(ref_ids: Iterable[str], source: Path) -> list[
 			f"{preview}"
 		)
 
-	return records
+
+def _load_records_from_source_ids(ref_ids: Iterable[str], source: Path) -> Iterator[SeqRecord]:
+	"""Yield GenBank records by record ID from a multi-record source file."""
+	selected = set(ref_ids)
+	for record in SeqIO.parse(source, "genbank"):
+		if record.id in selected:
+			yield record
 
 
 def write_selected_records(
-	selected_refs: set[str], output_genbank: Path, genbank_source: Path | None
+	selected_refs: set[str], output_genbank: Path, genbank_source: Path
 ) -> int:
 	"""Write selected GenBank records to output file and return count."""
-	if all(Path(ref).is_file() for ref in selected_refs):
-		records = _load_records_from_ref_paths(selected_refs)
-	elif genbank_source is not None:
-		records = _load_records_from_source_ids(selected_refs, genbank_source)
-	else:
-		raise ValueError(
-			"Selected references are not all readable file paths. Provide "
-			"--genbank-source to resolve references by record ID."
-		)
+	_validate_source_ids(selected_refs, genbank_source)
+	records = _load_records_from_source_ids(selected_refs, genbank_source)
 
 	output_genbank.parent.mkdir(parents=True, exist_ok=True)
 	written = SeqIO.write(records, output_genbank, "genbank")
@@ -291,9 +255,14 @@ def main(argv: Sequence[str] | None = None) -> int:
 	configure_logging(args.verbose)
 	try:
 		validate_args(args)
-		consensus_ids = read_consensus_ids(args.fastas)
+		consensus_ids = read_consensus_ids(args.fasta)
 		similarity_df = load_similarity_table(args.similarity_csv)
 
+		LOGGER.info(
+			"Loaded %d similarity rows for %d consensus sequences",
+			len(similarity_df),
+			len(consensus_ids),
+		)
 		if args.topx_range is not None:
 			report_topx_range_counts(similarity_df, consensus_ids, args.topx_range)
 			return 0

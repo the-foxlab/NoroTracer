@@ -1,8 +1,26 @@
 nextflow.enable.dsl=2
 
 
+process DownloadGenbank {
+    container 'fedora:40'
+
+    input:
+    val download_url
+    val output_filename
+
+    output:
+    path "${output_filename}", emit: genbank_file
+
+    script:
+    """
+    curl -4 -fL "${download_url}" -o "${output_filename}"
+    """
+}
+
 process ComputeSimilarities {
+    container 'gb2seq:runtime'
     label 'python'
+    cpus 64
 
     input:
     path genbank_file
@@ -23,6 +41,8 @@ process ComputeSimilarities {
 
 process ExtractClosestGenbankRecords {
     label 'python'
+    // container 'quay.io/biocontainers/biopython:1.70'
+    container 'gb2seq:runtime'
 
     input:
     path similarity_csv
@@ -35,7 +55,7 @@ process ExtractClosestGenbankRecords {
 
     script:
     """
-    python3 ${projectDir}/bin/extract_closes_genbank_records.py \
+    python3 ${projectDir}/bin/extract_closest_genbank_records.py \
         ${consensus_fasta} \
         ${similarity_csv} \
         ${topx} \
@@ -45,23 +65,25 @@ process ExtractClosestGenbankRecords {
 }
 
 process SplitClosestOrfs {
+    container 'gb2seq:runtime'
     label 'python'
 
     input:
     path reduced_genbank
+    path similarity_csv
     path consensus_fasta
 
     output:
-    path 'outdir/*.fasta', emit: orfs
+    path '*_orf1.fasta', emit: orf1s
+    path '*_orf2.fasta', emit: orf2s
 
     script:
     """
-    mkdir -p outdir
     python3 ${projectDir}/bin/split_orfs.py \
         ${reduced_genbank} \
+        ${similarity_csv} \
         ${consensus_fasta} \
-        -o outdir \
-        -j ${task.cpus}
+        --output-prefix split_orfs
     """
 }
 
@@ -173,8 +195,12 @@ process CreateMetadata {
 workflow {
 
     main:
-    genbank_file = Channel.fromPath(params.genbank_file)
-    consensus_fasta = Channel.fromPath(params.consensus_file)
+    downloaded_genbank = DownloadGenbank(
+        params.genbank_download_url,
+        params.genbank_file,
+    )
+    genbank_file = downloaded_genbank.genbank_file
+    consensus_fasta = file(params.consensus_file)
 
     similarities = ComputeSimilarities(genbank_file, consensus_fasta)
     reduced_genbank = ExtractClosestGenbankRecords(
@@ -183,12 +209,17 @@ workflow {
         genbank_file,
         params.similarity_topx,
     )
-    split_orfs = SplitClosestOrfs(reduced_genbank.reduced_genbank, consensus_fasta)
+    split_orfs = SplitClosestOrfs(
+        reduced_genbank.reduced_genbank,
+        similarities.similarities_csv,
+        consensus_fasta,
+    )
 
     publish:
     similarities_csv = similarities.similarities_csv
     reduced_genbank_file = reduced_genbank.reduced_genbank
-    split_orfs_output = split_orfs.orfs
+    split_orf1_output = split_orfs.orf1s
+    split_orf2_output = split_orfs.orf2s
 }
 
 output {
@@ -200,7 +231,11 @@ output {
         path 'filtered_references'
         mode 'copy'
     }
-    split_orfs_output {
+    split_orf1_output {
+        path 'split_orfs'
+        mode 'copy'
+    }
+    split_orf2_output {
         path 'split_orfs'
         mode 'copy'
     }

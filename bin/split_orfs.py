@@ -1,27 +1,37 @@
 #!/usr/bin/env python3
-"""Extract norovirus ORF1 and ORF2 using the closest GenBank reference.
+"""Extract norovirus ORF1 and ORF2 using a precomputed closest-reference table.
 
-For every record in the input FASTA files, the script finds the most similar
-reference from a multi-record GenBank file and uses gb2seq to cut ORF1 and
-ORF2. The reference comparisons can be distributed across multiple processes.
+The script reads consensus sequences from FASTA input, loads closest GenBank
+IDs from a similarity CSV, resolves those IDs in a multi-record GenBank source,
+and uses gb2seq to cut ORF1 and ORF2.
 """
 
 from __future__ import annotations
 
 import argparse
-import os
+import logging
 import sys
-from itertools import product
-from multiprocessing import Pool
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence
+from typing import Iterator, Sequence, cast
 
+from tempfile import TemporaryDirectory
+
+import pandas as pd
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from dark.fasta import FastaReads
 from gb2seq.alignment import Gb2Alignment, ReferenceInsertionError
 from gb2seq.features import Features
+
+
+LOGGER = logging.getLogger("split_orfs")
+
+
+def configure_logging(verbose: bool) -> None:
+    """Configure logging output."""
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=level, stream=sys.stdout, format="%(levelname)s: %(message)s")
 
 
 ORF1_NAMES = {
@@ -62,14 +72,22 @@ ORF2_NAMES = {
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Choose the closest GenBank reference for each consensus sequence "
-            "and extract ORF1 and ORF2 with gb2seq."
+            "Extract ORF1 and ORF2 using precomputed closest GenBank IDs "
+            "from a similarity table."
         )
     )
     parser.add_argument(
-        "genbank",
+        "genbank_source",
         type=Path,
-        help="Multi-record GenBank file containing candidate references.",
+        help="Multi-record GenBank file containing reference genomes.",
+    )
+    parser.add_argument(
+        "similarity_csv",
+        type=Path,
+        help=(
+            "Similarity CSV with columns consensus_id, genbank_id, identity. "
+            "If multiple rows per consensus exist, the highest identity row is used."
+        ),
     )
     parser.add_argument(
         "fastas",
@@ -78,163 +96,75 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="One or more FASTA files containing consensus genomes.",
     )
     parser.add_argument(
-        "-o",
-        "--output-dir",
+        "-p",
+        "--output-prefix",
         type=Path,
-        default=Path("."),
-        help="Output directory (default: current directory).",
+        default=Path("split_orfs"),
+        help=(
+            "Prefix for output FASTA files. The script writes "
+            "<prefix>_orf1.fasta and <prefix>_orf2.fasta."
+        ),
     )
     parser.add_argument(
-        "-j",
-        "--cores",
-        type=int,
-        default=os.cpu_count() or 1,
-        help="Maximum number of worker processes (default: all available cores).",
+        "--verbose",
+        action="store_true",
+        help="Enable debug logging.",
     )
     return parser.parse_args(argv)
 
 
 def validate_args(args: argparse.Namespace) -> None:
-    if args.cores < 1:
-        raise ValueError("--cores must be at least 1")
-    for path in (args.genbank, *args.fastas):
+    for path in (args.genbank_source, args.similarity_csv, *args.fastas):
         if not path.is_file():
             raise FileNotFoundError(f"Input file does not exist: {path}")
 
 
-def split_genbank(genbank: Path, directory: Path) -> list[Path]:
-    """Write references containing recognized ORF1 and ORF2 products."""
+def build_reference_paths(genbank_source: Path, directory: Path) -> dict[str, Path]:
+    """Write each GenBank record to disk and return a mapping ID -> path."""
     directory.mkdir(parents=True, exist_ok=True)
-    output_paths: list[Path] = []
-    record_ids: set[str] = set()
-    total = 0
-
-    for record in SeqIO.parse(genbank, "genbank"):
-        total += 1
-        if record.id in record_ids:
-            raise ValueError(f"Duplicate GenBank record ID: {record.id!r}")
-        record_ids.add(record.id)
-        feature_names = {
-            product_name
-            for feature in record.features
-            for product_name in feature.qualifiers.get("product", [])
-        }
-        if feature_names.intersection(ORF1_NAMES) and feature_names.intersection(ORF2_NAMES):
-            output_path = directory / f"{record.id}.gb"
-            SeqIO.write(record, output_path, "genbank")
-            output_paths.append(output_path)
-
-    print(f"Wrote {len(output_paths)} of {total} GenBank records.")
-    if not output_paths:
-        raise ValueError(
-            "No GenBank record contains recognized product names for both ORF1 and ORF2."
-        )
-    return output_paths
-
-
-def split_genbank_records(genbank: Path, directory: Path) -> list[Path]:
-    """Write each GenBank record to its own file and return all output paths."""
-    directory.mkdir(parents=True, exist_ok=True)
-    output_paths: list[Path] = []
+    reference_paths: dict[str, Path] = {}
     record_ids: set[str] = set()
 
-    for record in SeqIO.parse(genbank, "genbank"):
+    for record in SeqIO.parse(genbank_source, "genbank"):
         if record.id in record_ids:
             raise ValueError(f"Duplicate GenBank record ID: {record.id!r}")
         record_ids.add(record.id)
         output_path = directory / f"{record.id}.gb"
         SeqIO.write(record, output_path, "genbank")
-        output_paths.append(output_path)
+        reference_paths[record.id] = output_path
 
-    if not output_paths:
-        raise ValueError(f"No GenBank records found in file: {genbank}")
+    if not reference_paths:
+        raise ValueError(f"No GenBank records found in file: {genbank_source}")
 
-    return output_paths
-
-
-def split_fastas(fastas: Iterable[Path], directory: Path) -> tuple[list[Path], set[str]]:
-    """Write each consensus record to its own FASTA file."""
-    directory.mkdir(parents=True, exist_ok=True)
-    output_paths: list[Path] = []
-    record_ids: set[str] = set()
-
-    for fasta in fastas:
-        count = 0
-        for record in SeqIO.parse(fasta, "fasta"):
-            if record.id in record_ids:
-                raise ValueError(
-                    f"Duplicate FASTA record ID {record.id!r}; record IDs must be unique."
-                )
-            record_ids.add(record.id)
-            output_path = directory / f"{record.id}.fasta"
-            SeqIO.write(record, output_path, "fasta")
-            output_paths.append(output_path)
-            count += 1
-        if count == 0:
-            raise ValueError(f"FASTA file contains no records: {fasta}")
-
-    return output_paths, record_ids
+    return reference_paths
 
 
-def compare_to_reference(paths: tuple[Path, Path]) -> tuple[str, Path, float]:
-    """Return consensus ID, reference path, and aligned nucleotide identity."""
-    genbank_path, fasta_path = paths
-    features = Features(genbank_path)
-    reads = list(FastaReads(fasta_path))
-    if len(reads) != 1:
-        raise ValueError(f"Expected one FASTA record in {fasta_path}, found {len(reads)}")
+def load_closest_reference_map(similarity_csv: Path) -> dict[str, str]:
+    """Return consensus ID -> closest GenBank ID from a similarity CSV."""
+    table = cast(pd.DataFrame, pd.read_csv(similarity_csv))
+    required_columns = {"consensus_id", "genbank_id", "identity"}
+    if not required_columns.issubset(table.columns):
+        raise ValueError(
+            "Similarity CSV must contain consensus_id, genbank_id, and identity columns."
+        )
 
-    read = reads[0]
-    alignment = Gb2Alignment(read, features, aligner="edlib")
-    reference_sequence = alignment.referenceAligned.sequence
-    genome_sequence = alignment.genomeAligned.sequence
-    identity = sum(
-        reference_nt == genome_nt
-        for reference_nt, genome_nt in zip(reference_sequence, genome_sequence)
-    ) / len(reference_sequence)
-    return read.id, genbank_path, identity
+    table["consensus_id"] = table["consensus_id"].astype(str)
+    table["genbank_id"] = table["genbank_id"].astype(str)
+    table["identity"] = pd.to_numeric(table["identity"], errors="raise")
 
-
-def run_similarity_comparisons(
-    genbank_paths: Sequence[Path], fasta_paths: Sequence[Path], cores: int
-) -> Iterator[tuple[str, Path, float]]:
-    """Yield all pairwise similarity results from compare_to_reference."""
-    number_of_jobs = len(genbank_paths) * len(fasta_paths)
-    if number_of_jobs == 0:
-        return
-
-    worker_count = min(cores, number_of_jobs)
-    chunksize = max(1, number_of_jobs // (worker_count * 4))
-    comparisons = product(genbank_paths, fasta_paths)
-
-    print(
-        f"Comparing {len(fasta_paths)} consensus sequences with "
-        f"{len(genbank_paths)} references ({number_of_jobs} comparisons) "
-        f"using {worker_count} core(s)."
+    max_identity_rows = cast(
+        pd.DataFrame,
+        table.loc[
+            table.groupby("consensus_id")["identity"].idxmax(),
+            ["consensus_id", "genbank_id"],
+        ],
     )
-    with Pool(processes=worker_count) as pool:
-        for processed, result in enumerate(
-            pool.imap_unordered(compare_to_reference, comparisons, chunksize=chunksize),
-            start=1,
-        ):
-            if processed % 10_000 == 0 or processed == number_of_jobs:
-                print(
-                    f"Processed {processed}/{number_of_jobs} "
-                    f"({processed / number_of_jobs:.2%})."
-                )
-            yield result
-
-
-def find_closest_references(
-    genbank_paths: Sequence[Path], fasta_paths: Sequence[Path], cores: int
-) -> dict[str, tuple[Path, float]]:
-    closest: dict[str, tuple[Path, float]] = {}
-
-    for consensus_id, genbank_path, identity in run_similarity_comparisons(
-        genbank_paths, fasta_paths, cores
-    ):
-        if consensus_id not in closest or identity > closest[consensus_id][1]:
-            closest[consensus_id] = (genbank_path, identity)
+    closest = {
+        consensus_id: genbank_id
+        for consensus_id, genbank_id in max_identity_rows.itertuples(index=False, name=None)
+    }
+    if not closest:
+        raise ValueError(f"Similarity CSV has no rows: {similarity_csv}")
 
     return closest
 
@@ -251,22 +181,33 @@ def matching_feature_name(features: Features, aliases: set[str], orf: str) -> st
 def yield_orf_sequences(
     fasta_file: Path,
     orf: str,
-    closest: dict[str, tuple[Path, float]],
+    closest: dict[str, str],
+    reference_paths: dict[str, Path],
 ) -> Iterator[SeqRecord]:
     aliases = ORF1_NAMES if orf == "ORF1" else ORF2_NAMES
 
     for read in FastaReads(fasta_file):
-        genbank_path, _identity = closest[read.id]
-        features = Features(genbank_path)
+        consensus_id = read.id.split(" ")[0]
+        if consensus_id not in closest:
+            raise ValueError(
+                f"No closest GenBank ID found for consensus sequence: {consensus_id}"
+            )
+
+        reference_id = closest[consensus_id]
+        if reference_id not in reference_paths:
+            raise ValueError(
+                f"GenBank ID {reference_id!r} not found in source GenBank file."
+            )
+
+        features = Features(reference_paths[reference_id])
         feature_name = matching_feature_name(features, aliases, orf)
         alignment = Gb2Alignment(read, features)
         try:
             _, cut_orf = alignment.ntSequences(feature_name)
         except ReferenceInsertionError:
-            print(
+            LOGGER.warning(
                 f"Reference insertion in {features.reference.id} for {read.id}; "
                 "retrying with reference gaps allowed.",
-                file=sys.stderr,
             )
             _, cut_orf = alignment.ntSequences(
                 feature_name, raiseOnReferenceGaps=False
@@ -279,32 +220,47 @@ def yield_orf_sequences(
         )
 
 
-def output_path(fasta: Path, output_dir: Path, orf: str) -> Path:
-    return output_dir / f"{fasta.stem}_{orf.lower()}_gb2seqed.fasta"
+def yield_orf_sequences_for_fastas(
+    fastas: Sequence[Path],
+    orf: str,
+    closest: dict[str, str],
+    reference_paths: dict[str, Path],
+) -> Iterator[SeqRecord]:
+    """Yield ORF sequences for all input FASTA files."""
+    for fasta in fastas:
+        yield from yield_orf_sequences(fasta, orf, closest, reference_paths)
+
+
+def output_path(prefix: Path, orf: str) -> Path:
+    return Path(f"{prefix}_{orf.lower()}.fasta")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
+    configure_logging(args.verbose)
     try:
         validate_args(args)
-        args.output_dir.mkdir(parents=True, exist_ok=True)
-        genbank_paths = split_genbank(
-            args.genbank, args.output_dir / "genbank_files"
-        )
-        consensus_paths, _record_ids = split_fastas(
-            args.fastas, args.output_dir / "consensi_dir"
-        )
-        closest = find_closest_references(genbank_paths, consensus_paths, args.cores)
+        args.output_prefix.parent.mkdir(parents=True, exist_ok=True)
 
-        for fasta in args.fastas:
+        with TemporaryDirectory(prefix="split_orfs_") as temp_dir:
+            temp_root = Path(temp_dir)
+            reference_paths = build_reference_paths(
+                args.genbank_source, temp_root / "genbank_files"
+            )
+            closest = load_closest_reference_map(args.similarity_csv)
+
             for orf in ("ORF1", "ORF2"):
-                destination = output_path(fasta, args.output_dir, orf)
+                destination = output_path(args.output_prefix, orf)
                 count = SeqIO.write(
-                    yield_orf_sequences(fasta, orf, closest), destination, "fasta"
+                    yield_orf_sequences_for_fastas(
+                        args.fastas, orf, closest, reference_paths
+                    ),
+                    destination,
+                    "fasta",
                 )
-                print(f"Wrote {count} {orf} sequences to {destination}.")
+                LOGGER.info("Wrote %d %s sequences to %s.", count, orf, destination)
     except (FileNotFoundError, ValueError) as error:
-        print(f"error: {error}", file=sys.stderr)
+        LOGGER.error("%s", error)
         return 2
 
     return 0
