@@ -1,0 +1,79 @@
+# syntax=docker/dockerfile:1
+
+# ============================================================
+# 1. Conda base, containing runtime-level dependencies
+# ============================================================
+FROM mambaorg/micromamba:1.5.10 AS base
+
+RUN micromamba install -y -n base -c conda-forge -c bioconda mafft && \
+    micromamba clean --all --yes
+
+ENV PATH=/opt/conda/bin:$PATH
+
+SHELL ["/bin/bash", "-lc"]
+
+WORKDIR /workspace
+
+
+# ============================================================
+# 2. Development image with uv + Jupyter
+# ============================================================
+FROM base AS development
+
+# Install uv in this stage; it is only needed for development/build work.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+
+# Keep uv on PATH, expose the project scripts, and pin the project to the supported Python version.
+ENV PATH=/usr/local/bin:/workspace/bin:/opt/conda/envs/gb2seq-venv/bin:/opt/conda/bin:$PATH
+ENV UV_PROJECT_ENVIRONMENT=/opt/conda/envs/gb2seq-venv
+# Python 3.10 matches the project requirement and the repo's .python-version.
+ENV UV_PYTHON=3.10
+
+RUN mkdir -p /opt/conda/envs/gb2seq-venv && \
+    chown -R $MAMBA_USER:$MAMBA_USER /opt/conda/envs/gb2seq-venv
+
+# Copy dependency metadata first, so Docker can cache this layer.
+COPY pyproject.toml uv.lock README.md .python-version ./
+
+# Install third-party dependencies without installing the package itself yet.
+RUN uv sync --frozen --no-dev --no-install-project
+
+# Copy the project files and install the package itself.
+COPY bin ./bin
+COPY src ./src
+RUN uv sync --frozen --no-dev
+
+# Development-only tooling.
+RUN uv pip install jupyterlab ipykernel pandas
+
+CMD ["uv", "run", "jupyter", "lab", "--ip=0.0.0.0", "--no-browser"]
+
+
+# ============================================================
+# 3. Slim runtime image
+# ============================================================
+FROM base AS runtime
+
+# Install uv only long enough to build the runtime environment; remove it again
+# before the final image is shipped to keep the runtime image smaller.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+
+# Expose both the project scripts and the venv on PATH.
+ENV PATH=/workspace/bin:/opt/conda/envs/gb2seq-venv/bin:/opt/conda/bin:$PATH
+ENV UV_PROJECT_ENVIRONMENT=/opt/conda/envs/gb2seq-venv
+# Python 3.10 matches the project requirement and the repo's .python-version.
+ENV UV_PYTHON=3.10
+
+RUN mkdir -p /opt/conda/envs/gb2seq-venv && \
+    chown -R $MAMBA_USER:$MAMBA_USER /opt/conda/envs/gb2seq-venv
+
+COPY pyproject.toml uv.lock README.md .python-version ./
+RUN uv sync --frozen --no-dev --no-install-project
+
+COPY bin ./bin
+COPY src ./src
+# Install the project itself non-editably so imports keep working even if
+# /workspace is bind-mounted to a different host directory at runtime.
+RUN uv pip install --python /opt/conda/envs/gb2seq-venv/bin/python --no-deps .
+
+RUN uv pip install --python /opt/conda/envs/gb2seq-venv/bin/python pandas

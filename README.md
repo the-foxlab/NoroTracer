@@ -55,6 +55,22 @@ Outputs are written under `results/`:
 - `results/04_trees/*.treefile`
 - `results/05_metadata/` with the configured metadata filename
 
+## gb2seq runtime container
+
+The pipeline uses a custom runtime image for the Python/gb2seq steps. It is built from the upstream `gb2seq` repository and pinned to a specific commit so the environment stays reproducible:
+
+```bash
+docker build --target runtime -t gb2seq:runtime -f - https://github.com/VirologyCharite/gb2seq.git\#9db97d50185970403bb3265c19ade641f0e9c260 < Dockerfile_gb2seq
+```
+
+This image is used by the Nextflow processes in `main.nf` that depend on `gb2seq` and Biopython functionality, especially the similarity and ORF extraction stages:
+
+- `ComputeSimilarities` uses `container 'gb2seq:runtime'`
+- `ExtractClosestGenbankRecords` uses `container 'gb2seq:runtime'`
+- `SplitClosestOrfs` uses `container 'gb2seq:runtime'`
+
+Those steps run the project scripts in `bin/` inside the prepared environment and rely on the installed `gb2seq` runtime and Python dependencies provided by the image.
+
 ## Notes
 
 - This is intentionally simple and can be extended later.
