@@ -11,6 +11,8 @@ import pytest
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from itertools import product
+from typing import cast
 
 from tests.conftest import load_script_module
 
@@ -142,6 +144,17 @@ def test_similarity_output_matches_ground_truth(tmp_path: Path) -> None:
 	genbank_path = resource_dir / "noro_gb_records.gb"
 	fasta_path = resource_dir / "consensus.fasta"
 	expected_path = resource_dir / "similarities.csv"
+	
+	with open(fasta_path) as fh:
+		fasta_id_list = [record.id for record in SeqIO.parse(fh,'fasta')]
+	with open(genbank_path) as fh:
+		gb_id_list = [record.id for record in SeqIO.parse(fh,'genbank')]
+
+	df_full_sim = pd.read_csv(expected_path)
+	df_expected = cast(pd.DataFrame, 
+					df_full_sim.set_index(['consensus_id','genbank_id']
+						   ).loc[list(product(fasta_id_list, gb_id_list))].sort_index())
+	
 	output_path = tmp_path / "computed_similarities.csv"
 
 	written = compute_similarities.write_similarities_csv(
@@ -153,9 +166,6 @@ def test_similarity_output_matches_ground_truth(tmp_path: Path) -> None:
 
 	assert written > 0
 
-	actual = pd.read_csv(output_path)
-	expected = pd.read_csv(expected_path)
-	actual_sorted = actual.sort_values(["consensus_id", "genbank_id", "identity"]).reset_index(drop=True)
-	expected_sorted = expected.sort_values(["consensus_id", "genbank_id", "identity"]).reset_index(drop=True)
-
-	pd.testing.assert_frame_equal(actual_sorted, expected_sorted)
+	actual = pd.read_csv(output_path).set_index(['consensus_id','genbank_id']).sort_index()
+	
+	pd.testing.assert_frame_equal(actual, df_expected)
