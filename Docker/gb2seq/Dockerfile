@@ -8,7 +8,8 @@ FROM mambaorg/micromamba:1.5.10 AS base
 RUN micromamba install -y -n base \
         -c conda-forge \
         -c bioconda \
-        mafft \
+        --strict-channel-priority \
+        mafft=7.526 \
     && micromamba clean --all --yes
 
 ENV PATH=/opt/conda/bin:$PATH
@@ -21,11 +22,17 @@ SHELL ["/bin/bash", "-lc"]
 # ============================================================
 FROM base AS runtime
 
-COPY --from=ghcr.io/astral-sh/uv:latest \
+ARG GB2SEQ_COMMIT
+
+LABEL org.opencontainers.image.source="https://github.com/<owner>/gb2seq"
+LABEL org.opencontainers.image.revision="${GB2SEQ_COMMIT}"
+LABEL org.opencontainers.image.description="gb2seq execution environment with MAFFT and pandas"
+
+COPY --from=ghcr.io/astral-sh/uv:0.12.15 \
     /uv /uvx /usr/local/bin/
 
 ENV UV_PROJECT_ENVIRONMENT=/opt/conda/envs/gb2seq-venv
-ENV UV_PYTHON=3.10
+ENV UV_PYTHON=3.10.21
 
 ENV PATH=/opt/gb2seq/bin:/opt/conda/envs/gb2seq-venv/bin:/opt/conda/bin:$PATH
 
@@ -50,7 +57,7 @@ RUN uv sync \
 # dependency of gb2seq itself.
 RUN uv pip install \
     --python /opt/conda/envs/gb2seq-venv/bin/python \
-    pandas
+    pandas==2.3.3
 
 WORKDIR /workspace
 
@@ -62,9 +69,9 @@ FROM runtime AS development
 
 RUN uv pip install \
     --python /opt/conda/envs/gb2seq-venv/bin/python \
-    pytest \
-    jupyterlab \
-    ipykernel
+    pytest==9.1.1 \
+    jupyterlab==4.6.3 \
+    ipykernel==7.3.0
 
 CMD [\
     "jupyter",\

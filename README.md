@@ -1,77 +1,87 @@
-# Simple Norovirus Phylogenetics Pipeline (Nextflow)
+# Norovirus phylogenetic analysis pipeline
 
-This is a minimal and easy-to-read Nextflow pipeline based on your sketch:
+This repository currently contains the implemented workflow for:
 
-1. download records and write fasta
-2. split into ORF1 and ORF2
-3. align ORF1, ORF2, and full genome (MAFFT)
-4. build trees for each alignment (IQ-TREE)
-5. create metadata
+1. downloading a GenBank source file
+2. computing pairwise consensus/reference similarities
+3. selecting the closest GenBank records per consensus
+4. splitting the selected reference records into ORF1 and ORF2 sequences for the closest matches
 
-For Python-based steps, the pipeline calls a dummy `script.py`.
+The current implementation does not yet include downstream alignment or tree-building steps. In the current `main.nf`, the workflow stops after `SplitClosestOrfs`.
 
-## Files
+## Current workflow status
 
-- `main.nf`: pipeline workflow and processes
-- `nextflow.config`: local executor + Docker container settings
-- `script.py`: dummy script for download/split/metadata
+The active Nextflow workflow in `main.nf` runs these stages:
+
+- `DownloadGenbank`
+- `ComputeSimilarities`
+- `ExtractClosestGenbankRecords`
+- `SplitClosestOrfs`
+
+The scripts used by these stages are in `bin/`:
+
+- `compute_similarities.py`
+- `extract_closest_genbank_records.py`
+- `split_orfs.py`
+
+The downstream MAFFT/IQ-TREE steps described in earlier drafts are not yet implemented in the current pipeline.
 
 ## Requirements
 
 - Nextflow
 - Python 3
-- MAFFT
-- IQ-TREE
-- Optional: Docker (if you want containerized execution)
+- Docker (for the gb2seq runtime image and containerized execution)
+- optionally: conda, if you prefer to run the tests outside Docker
 
-## Run
+## Running the current workflow
 
 ```bash
 nextflow run main.nf -params-file params.yaml
 ```
 
-Override default file names via params:
-
-```bash
-nextflow run main.nf -params-file params.yaml \
-	--records_file input_records.fasta \
-	--orf1_file part_orf1.fasta \
-	--orf2_file part_orf2.fasta \
-	--genome_file whole_genome.fasta \
-	--metadata_file summary.tsv
-```
-
-To run with containers instead:
-
-```bash
-nextflow run main.nf -params-file params.yaml -profile docker
-```
-
-Outputs are written under `results/`:
-
-- `results/01_download/records.fasta`
-- `results/02_split/` with the configured ORF/genome filenames
-- `results/03_align/*.aln.fasta`
-- `results/04_trees/*.treefile`
-- `results/05_metadata/` with the configured metadata filename
+The current workflow is designed around the runtime parameters in `params.yaml` and uses the local project scripts in `bin/`.
 
 ## gb2seq runtime container
 
-The pipeline uses a custom runtime image for the Python/gb2seq steps. It is built from the upstream `gb2seq` repository and pinned to a specific commit so the environment stays reproducible:
+The Python steps that depend on `gb2seq` are executed in a custom runtime container built from the upstream `gb2seq` repository. The image is built from a fixed revision and tagged as `gb2seq:runtime`:
 
 ```bash
-docker build --target runtime -t gb2seq:runtime -f - https://github.com/VirologyCharite/gb2seq.git\#9db97d50185970403bb3265c19ade641f0e9c260 < Dockerfile_gb2seq
+docker build --target runtime -t gb2seq:runtime -f - https://github.com/VirologyCharite/gb2seq.git\#9db97d50185970403bb3265c19ade641f0e9c260 < Dockerfile
 ```
 
-This image is used by the Nextflow processes in `main.nf` that depend on `gb2seq` and Biopython functionality, especially the similarity and ORF extraction stages:
+This container is used in `main.nf` for the Python-based stages that rely on `gb2seq` and Biopython:
 
-- `ComputeSimilarities` uses `container 'gb2seq:runtime'`
-- `ExtractClosestGenbankRecords` uses `container 'gb2seq:runtime'`
-- `SplitClosestOrfs` uses `container 'gb2seq:runtime'`
+- `ComputeSimilarities`
+- `ExtractClosestGenbankRecords`
+- `SplitClosestOrfs`
 
-Those steps run the project scripts in `bin/` inside the prepared environment and rely on the installed `gb2seq` runtime and Python dependencies provided by the image.
+A container image is expected to be available at a registry or a local Docker image store under the tag `gb2seq:runtime` when running the pipeline. Placeholder upload location: https://example.com/gb2seq-runtime-container
+
+## Tests
+
+The project includes a small pytest suite under `tests/`.
+
+These tests are intended to validate the Python scripts and the resource-backed fixture data in `tests/resources/`.
+
+Run the tests with the project environment, using the same environment that provides the `gb2seq` runtime as defined by the project Dockerfile:
+
+```bash
+conda run -n vevo_snake pytest -q tests
+```
+
+If you are using the containerized workflow or a containerized test environment, make sure the `gb2seq:runtime` image is built first and available locally before running the tests that exercise the `gb2seq`-dependent code paths.
+
+## Repository files
+
+- `main.nf`: current workflow definition
+- `nextflow.config`: runtime settings and container configuration
+- `bin/`: Python scripts for similarity computation, closest-record extraction, and ORF extraction
+- `tests/`: pytest suite and small tracked test resources
+- `params.yaml`: runtime parameters, including secret or local values
+- `params.example.yaml`: example configuration template
 
 ## Notes
 
-- This is intentionally simple and can be extended later.
-- Container image tags in `nextflow.config` can be changed if needed for your environment.
+- This README reflects the current implemented state of the project.
+- Any downstream MAFFT/IQ-TREE alignment and phylogenetic tree-generation logic is still planned and not yet part of the active workflow.
+- The `gb2seq:runtime` image is required for the currently implemented gb2seq-based stages in the pipeline and validation tests.

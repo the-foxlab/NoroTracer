@@ -37,7 +37,7 @@ def test_select_top_references_keeps_highest_identity_per_consensus(similarity_c
 
 	expected = set(
 		df.sort_values(["consensus_id", "identity"], ascending=[True, False])
-		.drop_duplicates("consensus_id")["genbank_id"]
+		.drop_duplicates("consensus_id", keep="first")["genbank_id"]
 	)
 
 	assert selected == expected
