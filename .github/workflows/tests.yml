@@ -43,6 +43,15 @@ jobs:
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
             "$GB2SEQ_TEST_IMAGE" \
+            sh -lc 'pwd && ls -al && echo "--- tests ---" && ls -al /workspace/tests'
+
+          docker run --rm \
+            -e HOME=/tmp \
+            -e PYTHONDONTWRITEBYTECODE=1 \
+            -e PYTHONPATH=/workspace:/workspace/bin \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            "$GB2SEQ_TEST_IMAGE" \
             python -m pytest -q -p no:cacheprovider tests
 
       - name: Check runtime image
