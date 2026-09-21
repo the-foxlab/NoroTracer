@@ -22,7 +22,6 @@ jobs:
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v4
-
       # Works for a private package when this repository has package read access.
       # Also works when the package is public.
       - name: Log in to GHCR
@@ -40,8 +39,8 @@ jobs:
           docker run --rm \
             -e HOME=/tmp \
             -e PYTHONDONTWRITEBYTECODE=1 \
-            -e PYTHONPATH=/workspace/bin \
-            -v "$GITHUB_WORKSPACE:/workspace:ro" \
+            -e PYTHONPATH=/workspace:/workspace/bin \
+            -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
             "$GB2SEQ_TEST_IMAGE" \
             python -m pytest -q -p no:cacheprovider tests
