@@ -61,9 +61,11 @@ def test_validate_args_rejects_invalid_core_count(tmp_path: Path) -> None:
 		compute_similarities.validate_args(args)
 
 
-def test_split_fastas_writes_unique_records(consensus_fasta: tuple[Path, list]) -> None:
+def test_split_fastas_writes_unique_records(
+	consensus_fasta: tuple[Path, list], tmp_path: Path
+) -> None:
 	fasta_path, records = consensus_fasta
-	output_dir = fasta_path.parent / "split_fastas"
+	output_dir = tmp_path / "split_fastas"
 
 	paths, record_ids = compute_similarities.split_fastas([fasta_path], output_dir)
 
@@ -72,9 +74,11 @@ def test_split_fastas_writes_unique_records(consensus_fasta: tuple[Path, list]) 
 	assert {path.stem for path in paths} == {record.id for record in records}
 
 
-def test_split_genbank_records_writes_unique_record_files(genbank_source: tuple[Path, list]) -> None:
+def test_split_genbank_records_writes_unique_record_files(
+	genbank_source: tuple[Path, list], tmp_path: Path
+) -> None:
 	genbank_path, records = genbank_source
-	output_dir = genbank_path.parent / "split_genbank"
+	output_dir = tmp_path / "split_genbank"
 
 	paths = compute_similarities.split_genbank_records(genbank_path, output_dir)
 
