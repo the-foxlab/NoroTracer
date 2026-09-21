@@ -5,7 +5,13 @@ params.yaml
 *.pem
 *.key
 *.fasta
-*.gb 
+!tests/resources/
+!tests/resources/*.fasta
+!tests/resources/**/*.fasta
+*.gb
+!tests/resources/
+!tests/resources/*.gb
+!tests/resources/**/*.gb
 
 # Nextflow working files
 .nextflow/
