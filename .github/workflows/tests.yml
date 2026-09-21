@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      main:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -16,12 +16,12 @@ env:
   GB2SEQ_RUNTIME_IMAGE: ghcr.io/udogi/gb2seq-env:0.1.0-runtime@sha256:d791ac341727c4c8934be1921481f5e8eb4fe31f95688bf25c7f416abc8ff768
   GB2SEQ_TEST_IMAGE: ghcr.io/udogi/gb2seq-env:0.1.0-dev@sha256:1ba2a73e3fde572d7e2986f647a7b78f1b9288c4a0a13f7c8636c4a303f1f2ba
 
-  jobs:
+jobs:
   gb2seq-tests:
     runs-on: ubuntu-latest
     steps:
       - name: Check out pipeline code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       # Works for a private package when this repository has package read access.
       # Also works when the package is public.
