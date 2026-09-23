@@ -5,6 +5,7 @@ params.yaml
 *.pem
 *.key
 *.fasta
+*.ipynb
 !tests/resources/
 !tests/resources/*.fasta
 !tests/resources/**/*.fasta
