@@ -141,7 +141,8 @@ def compare_to_reference(paths: tuple[Path, Path]) -> tuple[str, str, float]:
 		reference_nt == genome_nt
 		for reference_nt, genome_nt in zip(reference_sequence, genome_sequence)
 	) / len(reference_sequence)
-	return read.id.split(" ")[0], features.reference.id, identity
+	# fasta id should not contain any whitespace, but just in case, we split on whitespace and take the first part
+	return read.id.split()[0], features.reference.id, identity
 
 
 def run_similarity_comparisons(

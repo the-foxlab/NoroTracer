@@ -187,7 +187,8 @@ def yield_orf_sequences(
     aliases = ORF1_NAMES if orf == "ORF1" else ORF2_NAMES
 
     for read in FastaReads(fasta_file):
-        consensus_id = read.id.split(" ")[0]
+        # make sure that that you get the fasta-id and not the description
+        consensus_id = read.id.split()[0]
         if consensus_id not in closest:
             raise ValueError(
                 f"No closest GenBank ID found for consensus sequence: {consensus_id}"
@@ -215,6 +216,7 @@ def yield_orf_sequences(
 
         yield SeqRecord(
             seq=Seq(cut_orf.sequence),
+            # ensure to get the fasta-id and not the description by splitting on whitespace
             id=f"{cut_orf.id.split()[0]}_{orf}",
             description=f"{orf} of {cut_orf.id}",
         )
