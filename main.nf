@@ -18,16 +18,16 @@ process DownloadGenbank {
 }
 
 process ComputeSimilarities {
-    container 'gb2seq:runtime'
+    container 'ghcr.io/udogi/gb2seq-env:0.1.0-runtime'
     label 'python'
-    cpus 64
+    cpus 4
 
     input:
+    tuple val(meta), path(consensus_fasta)
     path genbank_file
-    path consensus_fasta
 
     output:
-    path 'similarities.csv', emit: similarities_csv
+    tuple val(meta),path('similarities.csv'), emit: similarities
 
     script:
     """
@@ -42,7 +42,7 @@ process ComputeSimilarities {
 process ExtractClosestGenbankRecords {
     label 'python'
     // container 'quay.io/biocontainers/biopython:1.70'
-    container 'gb2seq:runtime'
+    container 'ghcr.io/udogi/gb2seq-env:0.1.0-runtime'
 
     input:
     path similarity_csv
@@ -65,7 +65,7 @@ process ExtractClosestGenbankRecords {
 }
 
 process SplitClosestOrfs {
-    container 'gb2seq:runtime'
+    container 'ghcr.io/udogi/gb2seq-env:0.1.0-runtime'
     label 'python'
 
     input:
@@ -192,51 +192,98 @@ process CreateMetadata {
     """
 }
 
-workflow {
+workflow CREATE_ALIGNMENTS_AND_TREES {
+
+    take:
+    ch_consensus
 
     main:
     downloaded_genbank = DownloadGenbank(
         params.genbank_download_url,
         params.genbank_file,
     )
+    
     genbank_file = downloaded_genbank.genbank_file
-    consensus_fasta = file(params.consensus_file)
 
-    similarities = ComputeSimilarities(genbank_file, consensus_fasta)
-    reduced_genbank = ExtractClosestGenbankRecords(
-        similarities.similarities_csv,
-        consensus_fasta,
-        genbank_file,
-        params.similarity_topx,
+    ComputeSimilarities(ch_consensus, genbank_file)
+    // reduced_genbank = ExtractClosestGenbankRecords(
+    //     similarities.similarities_csv,
+    //     consensus_fasta,
+    //     genbank_file,
+    //     params.similarity_topx,
+    // )
+    // split_orfs = SplitClosestOrfs(
+    //     reduced_genbank.reduced_genbank,
+    //     similarities.similarities_csv,
+    //     consensus_fasta,
+    // )
+
+    emit:
+    similarities_csv = ComputeSimilarities.out.similarities
+    // reduced_genbank_file = reduced_genbank.reduced_genbank
+    // split_orf1_output = split_orfs.orf1s
+    // split_orf2_output = split_orfs.orf2s
+}
+
+
+workflow {
+
+    main:
+
+    // Temporary hack to create a channel of consensus FASTA files that match the IDs in the multi-FASTA file
+     def multi_fasta = file(
+        '/home/udo/shared/researchers/udo_gieraths/code/noro_phylogenetic_analysis/g2_17_consensus.fasta',
+        checkIfExists: true
     )
-    split_orfs = SplitClosestOrfs(
-        reduced_genbank.reduced_genbank,
-        similarities.similarities_csv,
-        consensus_fasta,
-    )
+
+    def root_directory = '/home/udo/shared/researchers/udo_gieraths/code/amplicon-nf/results'
+
+    // Read the FASTA IDs into a regular Groovy set
+    def rids = multi_fasta
+        .splitFasta(record: [id: true])
+        .collect { record -> record.id }
+        .toSet()
+
+    // Emit one [id, file] tuple per matching consensus file
+    ch_consensus = channel
+        .fromPath("${root_directory}/Noro-P*/*.fasta")
+        .map { fasta ->
+            def id = fasta.baseName.split(/\./)[0]
+            tuple(id, fasta)
+        }
+        .filter { id, fasta -> id in rids }
+        .map{id,fasta -> [id, fasta]}
+
+    
+    // That's later the point to wire the amplicon_nf consensus_fasta channel from the workflow AMPLICON_NF 
+    CREATE_ALIGNMENTS_AND_TREES(ch_consensus)
 
     publish:
-    similarities_csv = similarities.similarities_csv
-    reduced_genbank_file = reduced_genbank.reduced_genbank
-    split_orf1_output = split_orfs.orf1s
-    split_orf2_output = split_orfs.orf2s
+    similarities_csv = CREATE_ALIGNMENTS_AND_TREES.out.similarities_csv
+    // reduced_genbank_file = CREATE_ALIGNMENTS_AND_TREES.out.reduced_genbank_file
+    // split_orf1_output = CREATE_ALIGNMENTS_AND_TREES.out.split_orf1_output
+    // split_orf2_output = CREATE_ALIGNMENTS_AND_TREES.out.split_orf2_output
+
 }
+
+
+
 
 output {
     similarities_csv {
-        path 'similarity_outputs'
+        path {id, csv -> "similarity_outputs/${id}_similarities/"} 
         mode 'copy'
     }
-    reduced_genbank_file {
-        path 'filtered_references'
-        mode 'copy'
-    }
-    split_orf1_output {
-        path 'split_orfs'
-        mode 'copy'
-    }
-    split_orf2_output {
-        path 'split_orfs'
-        mode 'copy'
-    }
+    // reduced_genbank_file {
+    //     path 'filtered_references'
+    //     mode 'copy'
+    // }
+    // split_orf1_output {
+    //     path 'split_orfs'
+    //     mode 'copy'
+    // }
+    // split_orf2_output {
+    //     path 'split_orfs'
+    //     mode 'copy'
+    // }
 }
