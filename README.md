@@ -16,7 +16,7 @@ The following steps are currently implemented
 1. downloading Norovirus Genotype II data from the [Calicivirus Typing Tool](https://calicivirustypingtool.cdc.gov)
 2. computing pairwise consensus/reference similarities using edlib to find the closest reference genome
 3. selecting the closest GenBank records per consensus
-4. extracting ORF1 and ORF2 from the closest reference records using [gb2seq](https://github.com/VirologyCharite/gb2seq)
+4. extracting ORF1 and ORF2 from the consesnus using the closest GenBank record and [gb2seq](https://github.com/VirologyCharite/gb2seq)
 5. Computing a MSA with Mafft and basic ML tree with iqtree3 for each ORF
 6. Testing setup using github actions
 
