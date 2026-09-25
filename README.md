@@ -25,7 +25,6 @@ The following steps are currently implemented
 - Nextflow
 - Python 3
 - Docker (for the gb2seq runtime image and containerized execution)
-- optionally: conda, if you prefer to run the tests outside Docker
 
 ## Running the current workflow
 
@@ -68,10 +67,7 @@ The automated tests must pass before code is merged to `main`.
 
 ### Running tests locally
 
-You can run the tests locally to validate changes before pushing. There are two approaches:
-
-#### With Docker (recommended, matches CI environment)
-
+You can run the tests locally to validate changes before pushing. 
 Run the tests inside the same container used by GitHub Actions:
 
 ```bash
@@ -84,14 +80,3 @@ docker run --rm \
 ```
 
 This ensures your local test results match the CI environment exactly.
-
-#### With conda (if gb2seq dependencies are available)
-
-Alternatively, run tests in your local conda environment:
-
-```bash
-conda run -n my_env pytest -q tests
-```
-
-This requires that `gb2seq` and its dependencies are installed in the `my_env` conda environment.
-
