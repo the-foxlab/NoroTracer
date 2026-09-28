@@ -1,6 +1,5 @@
 nextflow.enable.dsl=2
 
-
 process DownloadGenbank {
     container 'fedora:40'
 
@@ -206,13 +205,13 @@ workflow {
 
     // Temporary hack to create a channel of consensus FASTA files that match the IDs in the multi-FASTA file
      def multi_fasta = file(
-        '/home/udo/shared/researchers/udo_gieraths/code/noro_phylogenetic_analysis/g2_17_consensus.fasta',
+        params.used_fasta_ids,
         checkIfExists: true
     )
 
-    def root_directory = '/home/udo/shared/researchers/udo_gieraths/code/amplicon-nf/results'
+    def root_directory = params.amplicon_nf_result_dir
 
-    // Read the FASTA IDs into a regular Groovy set
+    // Read the FASTA IDs into a  set
     def rids = multi_fasta
         .splitFasta(record: [id: true])
         .collect { record -> record.id }
@@ -229,7 +228,7 @@ workflow {
         .map{id,fasta -> [[id: id], fasta]}
 
     
-    // That's later the point to wire the amplicon_nf consensus_fasta channel from the workflow AMPLICON_NF 
+    // That's the point to wire together with the amplicon_nf consensus_fasta channel from the workflow AMPLICON_NF 
     CREATE_ALIGNMENTS_AND_TREES(ch_consensus)
 
     publish:
