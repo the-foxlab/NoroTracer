@@ -1,6 +1,7 @@
 nextflow.enable.dsl=2
 
 process DownloadGenbank {
+    label 'prcoess_single'
     container 'fedora:40'
 
     input:
@@ -18,7 +19,7 @@ process DownloadGenbank {
 
 process ComputeSimilarities {
     container 'ghcr.io/udogi/gb2seq-env:0.1.0-runtime'
-    label 'python'
+    label 'process_medium'
     cpus 4
 
     input:
@@ -39,8 +40,7 @@ process ComputeSimilarities {
 }
 
 process ExtractClosestGenbankRecords {
-    label 'python'
-    // container 'quay.io/biocontainers/biopython:1.70'
+    label 'process_low'
     container 'ghcr.io/udogi/gb2seq-env:0.1.0-runtime'
 
     input:
@@ -65,7 +65,7 @@ process ExtractClosestGenbankRecords {
 
 process SplitClosestOrfs {
     container 'ghcr.io/udogi/gb2seq-env:0.1.0-runtime'
-    label 'python'
+    label 'process_low'
 
     input:
     tuple val(meta), path(consensus_fasta), path(similarity_csv)
@@ -86,7 +86,7 @@ process SplitClosestOrfs {
 }
 
 process AlignOrf {
-    label 'mafft'
+    label 'process_medium'
     container 'community.wave.seqera.io/library/mafft:7.526--8484e078c0b635aa'
 
     input:
@@ -103,7 +103,7 @@ process AlignOrf {
 
 
 process TreeOrf {
-    label 'iqtree'
+    label 'process_medium'
     container 'community.wave.seqera.io/library/iqtree:3.1.3--95869691c4fe61c2'
 
     input:
@@ -113,8 +113,10 @@ process TreeOrf {
     tuple val(meta), path('*.treefile'), emit: tree 
 
     script:
+    def args    = task.ext.args   ?: ''
+
     """
-    iqtree -s ${aln} -nt ${task.cpus} -pre ${aln.simpleName}
+    iqtree -s ${aln} -nt ${task.cpus} -pre ${aln.simpleName} ${args}
     """
 }
 
@@ -209,7 +211,7 @@ workflow {
         checkIfExists: true
     )
 
-    def root_directory = params.amplicon_nf_result_dir
+    def amplicon_nf_root_directory = params.amplicon_nf_result_dir
 
     // Read the FASTA IDs into a  set
     def rids = multi_fasta
@@ -219,7 +221,7 @@ workflow {
 
     // Emit one [id, file] tuple per matching consensus file
     ch_consensus = channel
-        .fromPath("${root_directory}/Noro-P*/*.fasta")
+        .fromPath("${amplicon_nf_root_directory}/Noro-P*/*.fasta")
         .map { fasta ->
             def id = fasta.baseName.split(/\./)[0]
             tuple(id, fasta)
