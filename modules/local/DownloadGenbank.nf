@@ -1,6 +1,6 @@
 process DownloadGenbank {
     label 'prcoess_single'
-    container 'fedora:40'
+    container 'community.wave.seqera.io/library/curl:8.23.0--19f33ac87ab0ac0d'
 
     input:
     val download_url

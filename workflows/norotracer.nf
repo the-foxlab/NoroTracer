@@ -6,12 +6,12 @@
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 
-include { DownloadGenbank } from './modules/local/DownloadGenbank'
-include { ComputeSimilarities } from './modules/local/ComputeSimilarities'
-include { ExtractClosestGenbankRecords } from './modules/local/ExtractClosestGenbankRecords'
-include { SplitClosestOrfs } from './modules/local/SplitClosestOrfs'
-include { AlignOrf } from './modules/local/AlignOrf'
-include { TreeOrf } from './modules/local/TreeOrf'
+include { DownloadGenbank } from '../modules/local/DownloadGenbank'
+include { ComputeSimilarities } from '../modules/local/ComputeSimilarities'
+include { ExtractClosestGenbankRecords } from '../modules/local/ExtractClosestGenbankRecords'
+include { SplitClosestOrfs } from '../modules/local/SplitClosestOrfs'
+include { AlignOrf } from '../modules/local/AlignOrf'
+include { TreeOrf } from '../modules/local/TreeOrf'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW

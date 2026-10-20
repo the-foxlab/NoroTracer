@@ -39,6 +39,16 @@ workflow THEFOXLAB_NOROTRACER {
         samplesheet,
         params.outdir,
     )
+
+    emit:
+    versions       = NOROTRACER.out.versions                 // channel: [ path(versions.yml) ]
+    similarities_csv = NOROTRACER.out.similarities_csv
+    reduced_genbank_file = NOROTRACER.out.reduced_genbank_file
+    split_orf1_output = NOROTRACER.out.split_orf1_output
+    split_orf2_output = NOROTRACER.out.split_orf2_output
+    orf1_aln_output = NOROTRACER.out.orf1_aln_output
+    orf2_aln_output = NOROTRACER.out.orf2_aln_output
+    tree_output = NOROTRACER.out.tree_output
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,13 +88,13 @@ workflow {
     )
 
     publish:
-    similarities_csv = CREATE_ALIGNMENTS_AND_TREES.out.similarities_csv
-    reduced_genbank_file = CREATE_ALIGNMENTS_AND_TREES.out.reduced_genbank_file
-    split_orf1_output = CREATE_ALIGNMENTS_AND_TREES.out.split_orf1_output
-    orf1_aln_output = CREATE_ALIGNMENTS_AND_TREES.out.orf1_aln_output
-    orf2_aln_output = CREATE_ALIGNMENTS_AND_TREES.out.orf2_aln_output
-    tree_output = CREATE_ALIGNMENTS_AND_TREES.out.tree_output
-    split_orf2_output = CREATE_ALIGNMENTS_AND_TREES.out.split_orf2_output
+    similarities_csv = THEFOXLAB_NOROTRACER.out.similarities_csv
+    reduced_genbank_file = THEFOXLAB_NOROTRACER.out.reduced_genbank_file
+    split_orf1_output = THEFOXLAB_NOROTRACER.out.split_orf1_output
+    orf1_aln_output = THEFOXLAB_NOROTRACER.out.orf1_aln_output
+    orf2_aln_output = THEFOXLAB_NOROTRACER.out.orf2_aln_output
+    tree_output = THEFOXLAB_NOROTRACER.out.tree_output
+    split_orf2_output = THEFOXLAB_NOROTRACER.out.split_orf2_output
 }
 
 output {
