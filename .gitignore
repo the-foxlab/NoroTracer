@@ -6,6 +6,7 @@ params.yaml
 *.key
 *.fasta
 *.ipynb
+noroTracerSampleSheet.csv
 !tests/resources/
 !tests/resources/*.fasta
 !tests/resources/**/*.fasta

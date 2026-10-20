@@ -33,28 +33,28 @@ workflow NOROTRACER {
     START Temporary hack to create a channel of consensus FASTA files that match the IDs in the multi-FASTA file
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
-     def multi_fasta = file(
-        params.used_fasta_ids,
-        checkIfExists: true
-    )
+    //  def multi_fasta = file(
+    //     params.used_fasta_ids,
+    //     checkIfExists: true
+    // )
 
-    def amplicon_nf_root_directory = params.amplicon_nf_result_dir
+    // def amplicon_nf_root_directory = params.amplicon_nf_result_dir
 
-    // Read the FASTA IDs into a  set
-    def rids = multi_fasta
-        .splitFasta(record: [id: true])
-        .collect { record -> record.id }
-        .toSet()
+    // // Read the FASTA IDs into a  set
+    // def rids = multi_fasta
+    //     .splitFasta(record: [id: true])
+    //     .collect { record -> record.id }
+    //     .toSet()
 
-    // Emit one [id, file] tuple per matching consensus file
-    ch_consensus = channel
-        .fromPath("${amplicon_nf_root_directory}/Noro-P*/*.fasta")
-        .map { fasta ->
-            def id = fasta.baseName.split(/\./)[0]
-            tuple(id, fasta)
-        }
-        .filter { id, fasta -> id in rids }
-        .map{id,fasta -> [[id: id], fasta]}
+    // // Emit one [id, file] tuple per matching consensus file
+    // ch_consensus = channel
+    //     .fromPath("${amplicon_nf_root_directory}/Noro-P*/*.fasta")
+    //     .map { fasta ->
+    //         def id = fasta.baseName.split(/\./)[0]
+    //         tuple(id, fasta)
+    //     }
+    //     .filter { id, fasta -> id in rids }
+    //     .map{id,fasta -> [[id: id], fasta]}
 
      /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -69,7 +69,7 @@ workflow NOROTRACER {
     
     genbank_file = downloaded_genbank.genbank_file
 
-    ch_sim = ComputeSimilarities(ch_consensus, genbank_file)
+    ch_sim = ComputeSimilarities(ch_samplesheet, genbank_file)
 
     ch_combined_csv = ch_sim.similarities
     .map { meta, csv -> csv }
@@ -78,7 +78,7 @@ workflow NOROTRACER {
         keepHeader: true,
         skip: 1
     )
-    ch_multifasta = ch_consensus
+    ch_multifasta = ch_samplesheet
     .map { meta, fasta -> fasta }
     .collectFile(
         name: 'combined.fasta',
@@ -93,7 +93,7 @@ workflow NOROTRACER {
         params.similarity_topx,
     )
     
-    SplitClosestOrfs(ch_consensus.join(ch_sim), reduced_genbank.reduced_genbank)
+    SplitClosestOrfs(ch_samplesheet.join(ch_sim), reduced_genbank.reduced_genbank)
 
     ch_orf1_combined = SplitClosestOrfs.out.orf1s
     .flatMap { meta, files -> files }
