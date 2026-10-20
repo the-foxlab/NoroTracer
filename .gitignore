@@ -13,12 +13,18 @@ params.yaml
 !tests/resources/
 !tests/resources/*.gb
 !tests/resources/**/*.gb
+testing/
+testing*
 
 # Nextflow working files
 .nextflow/
 .nextflow.log*
+.nextflow*
 work/
+data/
 results/
+null/
+.lineage/
 
 # Python cache and virtualenvs
 __pycache__/
