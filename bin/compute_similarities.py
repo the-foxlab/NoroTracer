@@ -101,7 +101,7 @@ def split_genbank_records(genbank: Path, directory: Path) -> list[Path]:
 
 
 def split_fastas(fastas: Iterable[Path], directory: Path) -> tuple[list[Path], set[str]]:
-	"""Write each consensus record to its own FASTA file."""
+	"""Write each record to its own FASTA file to make parallelization easier"""
 	directory.mkdir(parents=True, exist_ok=True)
 	output_paths: list[Path] = []
 	record_ids: set[str] = set()

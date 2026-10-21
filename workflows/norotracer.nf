@@ -72,7 +72,7 @@ workflow NOROTRACER {
     ch_sim = ComputeSimilarities(ch_samplesheet, genbank_file)
 
     ch_combined_csv = ch_sim.similarities
-    .map { meta, csv -> csv }
+    .map { meta, csv -> csv.text.replace('\r\n', '\n') }
     .collectFile(
         name: 'all_similarities.csv',
         keepHeader: true,

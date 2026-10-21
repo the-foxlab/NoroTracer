@@ -22,6 +22,12 @@ SHELL ["/bin/bash", "-lc"]
 # ============================================================
 FROM base AS runtime
 
+RUN micromamba install -y -n base \
+        -c conda-forge \
+        --strict-channel-priority \
+        procps-ng \
+    && micromamba clean --all --yes
+
 ARG GB2SEQ_COMMIT
 
 LABEL org.opencontainers.image.source="https://github.com/<owner>/gb2seq"

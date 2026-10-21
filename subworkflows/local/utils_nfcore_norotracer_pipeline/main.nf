@@ -87,7 +87,7 @@ workflow PIPELINE_INITIALISATION {
 
     channel
         .fromPath(params.input, checkIfExists: true).splitCsv(header: true)
-        .map { row -> [[id:row.id], row.consensus_fasta_fn]}
+        .map { row -> [[id:row.id], file(row.consensus_fasta_fn, checkIfExists: true)]}
         .set { ch_samplesheet }
 
     emit:
