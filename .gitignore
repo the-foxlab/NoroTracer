@@ -6,6 +6,7 @@ params.yaml
 *.key
 *.fasta
 *.ipynb
+noroTracerSampleSheet.csv
 !tests/resources/
 !tests/resources/*.fasta
 !tests/resources/**/*.fasta
@@ -13,12 +14,18 @@ params.yaml
 !tests/resources/
 !tests/resources/*.gb
 !tests/resources/**/*.gb
+testing/
+testing*
 
 # Nextflow working files
 .nextflow/
 .nextflow.log*
+.nextflow*
 work/
+data/
 results/
+null/
+.lineage/
 
 # Python cache and virtualenvs
 __pycache__/
