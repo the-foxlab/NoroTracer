@@ -84,11 +84,7 @@ workflow PIPELINE_INITIALISATION {
     //
     // Create channel from input file provided through params.input
     //
-
-    channel
-        .fromPath(params.input, checkIfExists: true).splitCsv(header: true)
-        .map { row -> [[id:row.id], file(row.consensus_fasta_fn, checkIfExists: true)]}
-        .set { ch_samplesheet }
+    ch_samplesheet = channel.fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
 
     emit:
     samplesheet = ch_samplesheet

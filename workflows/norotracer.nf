@@ -157,6 +157,7 @@ workflow NOROTRACER {
     emit:
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
     similarities_csv = ComputeSimilarities.out.similarities
+    all_similarities_csv = ch_combined_csv
     reduced_genbank_file = reduced_genbank.reduced_genbank
     split_orf1_output = SplitClosestOrfs.out.orf1s
     split_orf2_output = SplitClosestOrfs.out.orf2s

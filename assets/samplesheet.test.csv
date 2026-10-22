@@ -1,0 +1,5 @@
+sample,fasta_fn
+PZ526968.1,${params.test_data_dir}/split_fastas/PZ526968.1.fasta
+PZ682712.1,${params.test_data_dir}/split_fastas/PZ682712.1.fasta
+PZ661404.1,${params.test_data_dir}/split_fastas/PZ661404.1.fasta
+PZ895905.1,${params.test_data_dir}/split_fastas/PZ895905.1.fasta

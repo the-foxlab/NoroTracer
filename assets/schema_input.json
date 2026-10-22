@@ -2,7 +2,7 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/the-foxlab/norotracer/master/assets/schema_input.json",
     "title": "the-foxlab/norotracer pipeline - params.input schema",
-    "description": "Schema for the file provided with params.input",
+    "description": "Schema for the sample sheet provided with params.input",
     "type": "array",
     "items": {
         "type": "object",
@@ -13,21 +13,14 @@
                 "errorMessage": "Sample name must be provided and cannot contain spaces",
                 "meta": ["id"]
             },
-            "fastq_1": {
+            "fasta_fn": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
-            },
-            "fastq_2": {
-                "type": "string",
-                "format": "file-path",
-                "exists": true,
-                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?a$",
+                "errorMessage": "FASTA file for sample must be provided, cannot contain spaces and must have extension '.fasta' or '.fa'"
             }
         },
-        "required": ["sample", "fastq_1"]
+        "required": ["sample", "fasta_fn"]
     }
 }

@@ -43,6 +43,7 @@ workflow THEFOXLAB_NOROTRACER {
     emit:
     versions       = NOROTRACER.out.versions                 // channel: [ path(versions.yml) ]
     similarities_csv = NOROTRACER.out.similarities_csv
+    all_similarities_csv = NOROTRACER.out.all_similarities_csv
     reduced_genbank_file = NOROTRACER.out.reduced_genbank_file
     split_orf1_output = NOROTRACER.out.split_orf1_output
     split_orf2_output = NOROTRACER.out.split_orf2_output
@@ -89,6 +90,7 @@ workflow {
 
     publish:
     similarities_csv = THEFOXLAB_NOROTRACER.out.similarities_csv
+    all_similarities_csv = THEFOXLAB_NOROTRACER.out.all_similarities_csv
     reduced_genbank_file = THEFOXLAB_NOROTRACER.out.reduced_genbank_file
     split_orf1_output = THEFOXLAB_NOROTRACER.out.split_orf1_output
     orf1_aln_output = THEFOXLAB_NOROTRACER.out.orf1_aln_output
@@ -100,6 +102,10 @@ workflow {
 output {
     similarities_csv {
         path {meta, csv -> "similarity_outputs/${meta.id}_similarities/"} 
+        mode 'copy'
+    }
+    all_similarities_csv {
+        path {"similarity_outputs/"} 
         mode 'copy'
     }
     reduced_genbank_file {
