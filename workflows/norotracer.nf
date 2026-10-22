@@ -28,43 +28,9 @@ workflow NOROTRACER {
 
     def ch_versions = channel.empty()
 
-     /*
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    START Temporary hack to create a channel of consensus FASTA files that match the IDs in the multi-FASTA file
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    */
-    //  def multi_fasta = file(
-    //     params.used_fasta_ids,
-    //     checkIfExists: true
-    // )
-
-    // def amplicon_nf_root_directory = params.amplicon_nf_result_dir
-
-    // // Read the FASTA IDs into a  set
-    // def rids = multi_fasta
-    //     .splitFasta(record: [id: true])
-    //     .collect { record -> record.id }
-    //     .toSet()
-
-    // // Emit one [id, file] tuple per matching consensus file
-    // ch_consensus = channel
-    //     .fromPath("${amplicon_nf_root_directory}/Noro-P*/*.fasta")
-    //     .map { fasta ->
-    //         def id = fasta.baseName.split(/\./)[0]
-    //         tuple(id, fasta)
-    //     }
-    //     .filter { id, fasta -> id in rids }
-    //     .map{id,fasta -> [[id: id], fasta]}
-
-     /*
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    END Temporary hack to create a channel of consensus FASTA files that match the IDs in the multi-FASTA file
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    */
 
     downloaded_genbank = DownloadGenbank(
         params.genbank_download_url,
-        params.genbank_file,
     )
     
     genbank_file = downloaded_genbank.genbank_file
