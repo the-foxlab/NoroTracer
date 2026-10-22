@@ -31,7 +31,7 @@ The following steps are currently implemented
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/get_started/environment_setup/overview) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/get_started/run-your-first-pipeline) with `-profile test` before running the workflow on actual data.
 
 ```bash
-nextflow run main.nf -params-file params.yaml -with-docker
+nextflow run norotracer -params-file norotracer/params.yaml -profile test,docker
 ```
 
 The current workflow is designed around the runtime parameters in `params.yaml` and uses the local project scripts in `bin/`.
