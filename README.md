@@ -15,13 +15,13 @@ The following steps are currently implemented
 1. downloading Norovirus Genotype II data from the [Calicivirus Typing Tool](https://calicivirustypingtool.cdc.gov)
 2. computing pairwise consensus/reference similarities using [edlib](https://github.com/Martinsos/edlib) to find the closest reference genome
 3. selecting the closest GenBank records per consensus
-4. extracting ORF1 and ORF2 from the consesnus using the closest GenBank record and [gb2seq](https://github.com/VirologyCharite/gb2seq)
-5. Computing a MSA with Mafft and basic ML tree with iqtree3 for each ORF
+4. extracting ORF1 and ORF2 from the consensus using the closest GenBank record and [gb2seq](https://github.com/VirologyCharite/gb2seq)
+5. Computing an MSA using Mafft and an maximum likelihood tree using iqtree3 for each ORF
 6. Testing setup using github actions
 
 ## Requirements
 
-- Nextflow
+- Nextflow version >=26.04.0 (nf-schema version 3 required)
 - Python 3
 - Docker (for the gb2seq runtime image and containerized execution)
 
@@ -34,20 +34,20 @@ The following steps are currently implemented
 nextflow run NoroTracer -profile test,docker  
 ```
 
-The current workflow is designed around the runtime parameters in `params.yaml` and uses the local project scripts in `bin/`.
+The current workflow is intended to be supplied with runtime parameters in `params.yaml`.
 
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/running/run-pipelines#using-parameter-files).
 
 ## gb2seq runtime container
 
-The Python steps that depend on [gb2seq](https://github.com/VirologyCharite/gb2seq) are executed in a custom runtime container built from the upstream [gb2seq](https://github.com/VirologyCharite/gb2seq) repository. The image is built from a fixed revision and tagged as `gb2seq:runtime`:
+The Python steps that depend on [gb2seq](https://github.com/VirologyCharite/gb2seq) are executed in a custom runtime container built from the upstream [gb2seq](https://github.com/VirologyCharite/gb2seq) repository. The image was built from the Dockerfile in `Docker/gb2seq` using a fixed revision and tagged as `gb2seq:runtime`:
 
 ```bash
 docker build --target runtime -t gb2seq:runtime -f - https://github.com/VirologyCharite/gb2seq.git\#9db97d50185970403bb3265c19ade641f0e9c260 < Dockerfile
 ```
 
-Two container images are available at the [github container registry](ghcr.io/udogi/gb2seq-env:0.1.0-dev). A runtime container used for pipeline execution and a development container used for running the tests and active development:
+Two container images are available at the [github container registry](ghcr.io/udogi/gb2seq-env:0.1.0-dev). A runtime container used for pipeline execution and a development container used for running the tests and active development. Check the Dockerfile in `Docker/gb2seq` for the exact specs of each container.
 
 ```bash
 docker pull ghcr.io/udogi/gb2seq-env:0.1.0-dev
@@ -88,7 +88,7 @@ This ensures your local test results match the CI environment exactly.
 
 ## Credits
 
-the-foxlab/norotracer was originally written by Udo Gieraths.
+the-foxlab/norotracer was originally written by Dr. Udo Gieraths.
 
 ## Contributions and Support
 
