@@ -146,11 +146,19 @@ def test_compare_to_reference_matches_expected_identity_after_mutations(tmp_path
 def test_similarity_output_matches_ground_truth(tmp_path: Path) -> None:
 	resource_dir = Path(__file__).resolve().parent / "resources"
 	genbank_path = resource_dir / "noro_gb_records.gb"
-	fasta_path = resource_dir / "consensus.fasta"
+	fasta_dir = resource_dir / "split_fastas"
 	expected_path = resource_dir / "similarities.csv"
+	fn_merged_fasta = tmp_path / "merged_fastas.fasta"
+
+	fasta_id_list: list[str] = []
+	with open(fn_merged_fasta, "w") as fh_out:
+		for fasta_path in fasta_dir.glob("*.fasta"):
+			assert fasta_path.is_file(), f"Missing test resource: {fasta_path}"
+			with open(fasta_path) as fh:
+				for record in SeqIO.parse(fh,'fasta'):
+					SeqIO.write(record, fh_out, 'fasta')
+					fasta_id_list.append(record.id)
 	
-	with open(fasta_path) as fh:
-		fasta_id_list = [record.id for record in SeqIO.parse(fh,'fasta')]
 	with open(genbank_path) as fh:
 		gb_id_list = [record.id for record in SeqIO.parse(fh,'genbank')]
 
@@ -163,13 +171,13 @@ def test_similarity_output_matches_ground_truth(tmp_path: Path) -> None:
 
 	written = compute_similarities.write_similarities_csv(
 		genbank=genbank_path,
-		fastas=[fasta_path],
+		fastas=[fn_merged_fasta],
 		output=output_path,
 		cores=1,
 	)
 
 	assert written > 0
-
+	# TODO: could additionally pick out specific comparisions that i manually checked
 	actual = pd.read_csv(output_path).set_index(['consensus_id','genbank_id']).sort_index()
 	
 	pd.testing.assert_frame_equal(actual, df_expected)
