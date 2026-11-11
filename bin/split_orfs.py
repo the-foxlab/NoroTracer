@@ -29,7 +29,11 @@ LOGGER = logging.getLogger("split_orfs")
 
 
 def configure_logging(verbose: bool) -> None:
-    """Configure logging output."""
+    """Configure console logging at INFO or DEBUG level.
+
+    Args:
+        verbose: Enable DEBUG-level messages when true.
+    """
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(level=level, stream=sys.stdout, format="%(levelname)s: %(message)s")
 
@@ -70,6 +74,14 @@ ORF2_NAMES = {
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse command-line options for ORF extraction.
+
+    Args:
+        argv: Arguments to parse, or None to use the process command line.
+
+    Returns:
+        The parsed input paths and runtime options.
+    """
     parser = argparse.ArgumentParser(
         description=(
             "Extract ORF1 and ORF2 using precomputed closest GenBank IDs "
@@ -114,13 +126,32 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def validate_args(args: argparse.Namespace) -> None:
+    """Check that all required input paths point to existing files.
+
+    Args:
+        args: Parsed arguments containing the GenBank, similarity, and FASTA paths.
+
+    Raises:
+        FileNotFoundError: If any required input path is not a file.
+    """
     for path in (args.genbank_source, args.similarity_csv, *args.fastas):
         if not path.is_file():
             raise FileNotFoundError(f"Input file does not exist: {path}")
 
 
 def build_reference_paths(genbank_source: Path, directory: Path) -> dict[str, Path]:
-    """Write each GenBank record to disk and return a mapping ID -> path."""
+    """Write each GenBank record to a separate file.
+
+    Args:
+        genbank_source: Multi-record GenBank input file.
+        directory: Directory in which to write the individual records.
+
+    Returns:
+        A mapping from each GenBank record ID to its output path.
+
+    Raises:
+        ValueError: If the input contains duplicate IDs or no records.
+    """
     directory.mkdir(parents=True, exist_ok=True)
     reference_paths: dict[str, Path] = {}
     record_ids: set[str] = set()
@@ -140,7 +171,17 @@ def build_reference_paths(genbank_source: Path, directory: Path) -> dict[str, Pa
 
 
 def load_closest_reference_map(similarity_csv: Path) -> dict[str, str]:
-    """Return consensus ID -> closest GenBank ID from a similarity CSV."""
+    """Select the highest-identity GenBank reference for each consensus.
+
+    Args:
+        similarity_csv: CSV containing consensus IDs, GenBank IDs, and identities.
+
+    Returns:
+        A mapping from each consensus ID to its highest-identity GenBank ID.
+
+    Raises:
+        ValueError: If required columns are absent or the CSV has no rows.
+    """
     table = cast(pd.DataFrame, pd.read_csv(similarity_csv))
     required_columns = {"consensus_id", "genbank_id", "identity"}
     if not required_columns.issubset(table.columns):
@@ -170,6 +211,19 @@ def load_closest_reference_map(similarity_csv: Path) -> dict[str, str]:
 
 
 def matching_feature_name(features: Features, aliases: set[str], orf: str) -> str:
+    """Find the first recognized feature name for an ORF.
+
+    Args:
+        features: Annotated features from the selected reference record.
+        aliases: Accepted names for the requested ORF.
+        orf: ORF label used in the error message when no name matches.
+
+    Returns:
+        The lexicographically first feature name matching an alias.
+
+    Raises:
+        ValueError: If none of the aliases occur in the reference features.
+    """
     matches = sorted(aliases & set(features.keys()))
     if not matches:
         raise ValueError(
@@ -184,6 +238,20 @@ def yield_orf_sequences(
     closest: dict[str, str],
     reference_paths: dict[str, Path],
 ) -> Iterator[SeqRecord]:
+    """Yield one aligned ORF sequence record for each consensus in a FASTA file.
+
+    Args:
+        fasta_file: FASTA file containing consensus genome sequences.
+        orf: ORF label, either ``ORF1`` or ``ORF2``.
+        closest: Mapping from consensus IDs to closest GenBank IDs.
+        reference_paths: Mapping from GenBank IDs to individual record files.
+
+    Yields:
+        SeqRecord objects containing the extracted consensus ORF sequences.
+
+    Raises:
+        ValueError: If a consensus or its selected GenBank reference cannot be found.
+    """
     aliases = ORF1_NAMES if orf == "ORF1" else ORF2_NAMES
 
     for read in FastaReads(fasta_file):
@@ -228,16 +296,43 @@ def yield_orf_sequences_for_fastas(
     closest: dict[str, str],
     reference_paths: dict[str, Path],
 ) -> Iterator[SeqRecord]:
-    """Yield ORF sequences for all input FASTA files."""
+    """Yield extracted ORF sequences from multiple FASTA files.
+
+    Args:
+        fastas: FASTA files containing consensus genome sequences.
+        orf: ORF label to extract from each sequence.
+        closest: Mapping from consensus IDs to closest GenBank IDs.
+        reference_paths: Mapping from GenBank IDs to individual record files.
+
+    Yields:
+        SeqRecord objects from each input file, in file and record order.
+    """
     for fasta in fastas:
         yield from yield_orf_sequences(fasta, orf, closest, reference_paths)
 
 
 def output_path(prefix: Path, orf: str) -> Path:
+    """Construct the output FASTA path for an ORF.
+
+    Args:
+        prefix: Base path shared by the ORF output files.
+        orf: ORF label, whose lowercase form is used in the suffix.
+
+    Returns:
+        A path formatted as ``<prefix>_<orf-lowercase>.fasta``.
+    """
     return Path(f"{prefix}_{orf.lower()}.fasta")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Run ORF extraction and write separate ORF1 and ORF2 FASTA files.
+
+    Args:
+        argv: Arguments to parse, or None to use the process command line.
+
+    Returns:
+        Exit status 0 on success or 2 for invalid or missing input files.
+    """
     args = parse_args(argv)
     configure_logging(args.verbose)
     try:

@@ -3,10 +3,6 @@
     "homePage": "https://github.com/the-foxlab/norotracer",
     "repos": {
         "https://github.com/nf-core/modules.git": {
-            "modules": {
-                "nf-core": {
-                }
-            },
             "subworkflows": {
                 "nf-core": {
                     "utils_nextflow_pipeline": {

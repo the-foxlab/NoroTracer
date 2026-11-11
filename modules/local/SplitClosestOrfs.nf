@@ -7,8 +7,8 @@ process SplitClosestOrfs {
     path genbank_file
 
     output:
-    tuple val(meta), path('*_orf1.fasta', arity: '1..*'), emit: orf1s
-    tuple val(meta), path('*_orf2.fasta', arity: '1..*'), emit: orf2s
+    tuple val(meta), path('*_orf1.fasta', arity: '1'), emit: orf1s
+    tuple val(meta), path('*_orf2.fasta', arity: '1'), emit: orf2s
 
     script:
     """
