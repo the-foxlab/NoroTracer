@@ -20,7 +20,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
 
-LOGGER = logging.getLogger("extract_closes_genbank_records")
+LOGGER = logging.getLogger("extract_closest_genbank_records")
 
 
 def configure_logging(verbose: bool) -> None:
@@ -55,14 +55,23 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 		),
 	)
 	parser.add_argument(
-		"topx",
-		type=int,
-		nargs="?",
-		help="Number of closest GenBank references to keep per consensus.",
+		"genbank_source",
+		type=Path,
+		help=(
+			"Multi-record GenBank source file used to resolve selected GenBank IDs."
+		),
 	)
-	parser.add_argument(
+	group = parser.add_mutually_exclusive_group(required=True)
+	group.add_argument(
+		"--topx",
+		type=int,
+		default=None,
+		help="Number of closest GenBank references to keep per consensus (default: 3).",
+	)
+	group.add_argument(
 		"--topx-range",
 		type=str,
+		default=None,
 		help=(
 			"Range start,end for count-only reporting. Example: 1,10 reports "
 			"unique reference counts for top1 through top10."
@@ -83,14 +92,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 		),
 	)
 	parser.add_argument(
-		"--genbank-source",
-		type=Path,
-		required=True,
-		help=(
-			"Multi-record GenBank source file used to resolve selected GenBank IDs."
-		),
-	)
-	parser.add_argument(
 		"--verbose",
 		action="store_true",
 		help="Enable debug logging.",
@@ -101,7 +102,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def validate_args(args: argparse.Namespace) -> None:
 	"""Validate user input arguments."""
 	if args.topx is None and args.topx_range is None:
-		raise ValueError("Provide either topx or --topx-range")
+		args.topx = 3  # default top-X value
 
 	if args.topx is not None and args.topx < 1:
 		raise ValueError("topx must be at least 1")
@@ -124,8 +125,6 @@ def validate_args(args: argparse.Namespace) -> None:
 		if args.output_genbank is not None:
 			raise ValueError("--topx-range cannot be used with --output-genbank")
 
-	if not args.genbank_source.is_file():
-		raise FileNotFoundError(f"Input file does not exist: {args.genbank_source}")
 
 
 

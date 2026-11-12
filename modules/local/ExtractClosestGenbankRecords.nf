@@ -12,12 +12,14 @@ process ExtractClosestGenbankRecords {
     path 'reduced_references.gb', emit: reduced_genbank
 
     script:
+    def args    = task.ext.args   ?: ''
+
     """
     python3 ${projectDir}/bin/extract_closest_genbank_records.py \
         ${consensus_fasta} \
         ${similarity_csv} \
-        ${topx} \
+        ${genbank_file} \
+        ${args} \
         --output-genbank reduced_references.gb \
-        --genbank-source ${genbank_file}
     """
 }
