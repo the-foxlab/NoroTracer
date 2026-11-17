@@ -13,9 +13,9 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 BIN_DIR = ROOT / "bin"
-RESOURCES_DIR = Path(__file__).resolve().parent / "resources"
+RESOURCES_DIR = Path(__file__).resolve().parents[1] / "resources"
 
 
 def load_script_module(module_name: str, script_name: str):

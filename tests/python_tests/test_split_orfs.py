@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import load_script_module
+from python_tests.conftest import load_script_module
 
 try:
 	split_orfs = load_script_module("split_orfs", "split_orfs.py")

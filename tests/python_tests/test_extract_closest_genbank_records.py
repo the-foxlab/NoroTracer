@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tests.conftest import load_script_module
+from python_tests.conftest import RESOURCES_DIR, load_script_module
 
 try:
 	extract = load_script_module("extract_closest_genbank_records", "extract_closest_genbank_records.py")
