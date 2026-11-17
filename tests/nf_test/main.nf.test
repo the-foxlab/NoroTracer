@@ -1,0 +1,32 @@
+nextflow_pipeline {
+
+    name "Test Workflow main.nf"
+    script "main.nf"
+
+    test("Should run successfully with correct number of processes") {
+
+        when {
+            params {
+                // define parameters here. Example: 
+                // outdir = "tests/results"
+
+                // Input data
+                input  = "${projectDir}/assets/samplesheet.test.csv"
+                test_data_dir = "${projectDir}/tests/resources/"
+
+                genbank_download_url = "https://calicivirustypingtool.cdc.gov/gebali.cgi?GII.+gb"
+                similarity_topx = 3
+
+                // IQ-TREE3 parameters
+                iq_tree_bb = 1000
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert workflow.trace.tasks().size() == 15
+        }
+
+    }
+
+}
