@@ -6,7 +6,7 @@
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 
-include { DownloadGenbank } from '../modules/local/DownloadGenbank'
+include { DOWNLOAD_GENBANK } from '../modules/local/downloadgenbank'
 include { ComputeSimilarities } from '../modules/local/ComputeSimilarities'
 include { ExtractClosestGenbankRecords } from '../modules/local/ExtractClosestGenbankRecords'
 include { ExtractOrfsFromGenbank } from '../modules/local/ExtractOrfsFromGenbank'
@@ -30,7 +30,7 @@ workflow NOROTRACER {
     def ch_versions = channel.empty()
 
 
-    downloaded_genbank = DownloadGenbank(
+    downloaded_genbank = DOWNLOAD_GENBANK(
         params.genbank_download_url,
     )
     

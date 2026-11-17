@@ -16,6 +16,8 @@ noroTracerSampleSheet.csv
 !tests/resources/**/*.gb
 testing/
 testing*
+.nf-test.log
+.nf-test/
 
 # Nextflow working files
 .nextflow/
