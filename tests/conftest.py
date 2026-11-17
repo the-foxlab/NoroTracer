@@ -6,6 +6,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 from pathlib import Path
+from types import ModuleType
 
 import pandas as pd
 import pytest
@@ -18,7 +19,7 @@ BIN_DIR = ROOT / "bin"
 RESOURCES_DIR = Path(__file__).resolve().parent / "resources"
 
 
-def load_script_module(module_name: str, script_name: str):
+def load_script_module(module_name: str, script_name: str) -> ModuleType:
 	"""Load a script from the bin directory as a Python module."""
 	module_path = BIN_DIR / script_name
 	spec = importlib.util.spec_from_file_location(module_name, module_path)

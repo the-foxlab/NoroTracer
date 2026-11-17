@@ -14,7 +14,7 @@ from Bio.SeqRecord import SeqRecord
 from itertools import product
 from typing import cast
 
-from tests.conftest import load_script_module
+from tests.conftest import RESOURCES_DIR, load_script_module
 
 try:
 	compute_similarities = load_script_module("compute_similarities", "compute_similarities.py")
@@ -88,7 +88,7 @@ def test_split_genbank_records_writes_unique_record_files(
 
 
 def test_compare_to_reference_exact_match_on_real_resource_data(tmp_path: Path) -> None:
-	resource_dir = Path(__file__).resolve().parent / "resources"
+	resource_dir = RESOURCES_DIR
 	genbank_path = resource_dir / "noro_gb_records.gb"
 	record = next(SeqIO.parse(genbank_path, "genbank"))
 	genbank_single_record_path = tmp_path / f"{record.id}.gb"
@@ -110,7 +110,7 @@ def test_compare_to_reference_exact_match_on_real_resource_data(tmp_path: Path) 
 
 
 def test_compare_to_reference_matches_expected_identity_after_mutations(tmp_path: Path) -> None:
-	resource_dir = Path(__file__).resolve().parent / "resources"
+	resource_dir = RESOURCES_DIR
 	genbank_path = resource_dir / "noro_gb_records.gb"
 	record = next(SeqIO.parse(genbank_path, "genbank"))
 	genbank_single_record_path = tmp_path / f"{record.id}.gb"
@@ -144,7 +144,7 @@ def test_compare_to_reference_matches_expected_identity_after_mutations(tmp_path
 
 
 def test_similarity_output_matches_ground_truth(tmp_path: Path) -> None:
-	resource_dir = Path(__file__).resolve().parent / "resources"
+	resource_dir = RESOURCES_DIR
 	genbank_path = resource_dir / "noro_gb_records.gb"
 	fasta_dir = resource_dir / "split_fastas"
 	expected_path = resource_dir / "similarities.csv"
