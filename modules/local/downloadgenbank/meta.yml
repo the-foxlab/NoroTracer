@@ -1,43 +1,41 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 name: "downloadgenbank"
-description: write your description here
+description: Download a GenBank flatfile from a URL using curl.
 keywords:
-  - sort
-  - example
+  - genbank
+  - sequence-retrieval
+  - curl
   - genomics
 tools:
-  - "downloadgenbank":
-      description: ""
-      homepage: ""
-      documentation: ""
-      tool_dev_url: ""
-      doi: ""
-      licence: null
+  - "curl":
+      description: "Command-line tool for transferring data using URLs."
+      homepage: "https://curl.se/"
+      documentation: "https://curl.se/docs/"
+      tool_dev_url: "https://github.com/curl/curl"
+      doi: null
+      licence: "curl license (MIT/X derivative)"
       identifier: null
 
 input:
-  - input:
-      type: file
-      description: ""
-      pattern: ""
-      ontologies:
-        - edam: ""
+  - download_url:
+      type: string
+      description: URL of the GenBank flatfile to download.
 output:
-  output:
+  genbank_file:
     - "*":
         type: file
-        description: ""
-        pattern: ""
+        description: Downloaded GenBank flatfile.
+        pattern: "*.gb"
         ontologies:
-          - edam: ""
+          - edam: "format_1936"
   versions_downloadgenbank:
     - - ${task.process}:
           type: string
           description: The name of the process
-      - downloadgenbank:
+      - curl:
           type: string
           description: The name of the tool
-      - downloadgenbank --version:
+      - curl --version | sed "1!d; s/^curl //; s/ .*//":
           type: eval
           description: The expression to obtain the version of the tool
 topics:
@@ -45,10 +43,10 @@ topics:
     - - ${task.process}:
           type: string
           description: The name of the process
-      - downloadgenbank:
+      - curl:
           type: string
           description: The name of the tool
-      - downloadgenbank --version:
+      - curl --version | sed "1!d; s/^curl //; s/ .*//":
           type: eval
           description: The expression to obtain the version of the tool
 authors:
