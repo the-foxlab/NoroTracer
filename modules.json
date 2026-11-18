@@ -5,6 +5,11 @@
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
+                    "iqtree": {
+                        "branch": "master",
+                        "git_sha": "470454ce39c7d3ea191c0e195894653bc4a782ba",
+                        "installed_by": ["modules"]
+                    },
                     "mafft/align": {
                         "branch": "master",
                         "git_sha": "d06ef576fbf8440246d420b7d0d4eb291b6ef034",

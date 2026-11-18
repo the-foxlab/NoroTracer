@@ -12,7 +12,7 @@ include { ExtractClosestGenbankRecords } from '../modules/local/ExtractClosestGe
 include { ExtractOrfsFromGenbank } from '../modules/local/ExtractOrfsFromGenbank'
 include { SplitClosestOrfs } from '../modules/local/SplitClosestOrfs'
 include { MAFFT_ALIGN } from '../modules/nf-core/mafft/align'
-include { TreeOrf } from '../modules/local/TreeOrf'
+include { IQTREE } from '../modules/nf-core/iqtree'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -90,7 +90,10 @@ workflow NOROTRACER {
         [[:], []],
         false,
     )
-    tree = TreeOrf(orf_aln.fas)
+    tree = IQTREE(
+        orf_aln.fas.map { meta, aln -> [meta, aln, []] },
+        [], [], [], [], [], [], [], [], [], [], [], [],
+    )
 
     combined_aln_ch = ch_orf_with_ref.mix(orf_aln.fas)
     combined_cons_orf = SplitClosestOrfs.out.orf1s
@@ -134,7 +137,7 @@ workflow NOROTRACER {
     reduced_genbank_file = reduced_genbank.reduced_genbank
     split_orf_output = combined_cons_orf
     comb_aln_output = combined_aln_ch
-    tree_output = tree.tree
+    tree_output = tree.phylogeny
 }
 
 /*
