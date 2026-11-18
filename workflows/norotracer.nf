@@ -11,7 +11,7 @@ include { ComputeSimilarities } from '../modules/local/ComputeSimilarities'
 include { ExtractClosestGenbankRecords } from '../modules/local/ExtractClosestGenbankRecords'
 include { ExtractOrfsFromGenbank } from '../modules/local/ExtractOrfsFromGenbank'
 include { SplitClosestOrfs } from '../modules/local/SplitClosestOrfs'
-include { AlignOrf } from '../modules/local/AlignOrf'
+include { MAFFT_ALIGN } from '../modules/nf-core/mafft/align'
 include { TreeOrf } from '../modules/local/TreeOrf'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,10 +81,18 @@ workflow NOROTRACER {
         .map { fasta -> tuple([id: 'orf2'], fasta) }
         
     ch_orf_with_ref = ch_orf1_with_ref.mix(ch_orf2_with_ref)
-    orf_aln = AlignOrf(ch_orf_with_ref)
-    tree = TreeOrf(orf_aln.alignment)
+    orf_aln = MAFFT_ALIGN(
+        ch_orf_with_ref,
+        [[:], []],
+        [[:], []],
+        [[:], []],
+        [[:], []],
+        [[:], []],
+        false,
+    )
+    tree = TreeOrf(orf_aln.fas)
 
-    combined_aln_ch = ch_orf_with_ref.mix(orf_aln.alignment)
+    combined_aln_ch = ch_orf_with_ref.mix(orf_aln.fas)
     combined_cons_orf = SplitClosestOrfs.out.orf1s
         .map{ meta, file -> [meta + [orf: 'orf1'], file] }
         .mix(
