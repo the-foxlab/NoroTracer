@@ -7,7 +7,7 @@ include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 
 include { DOWNLOAD_GENBANK } from '../modules/local/downloadgenbank'
-include { ComputeSimilarities } from '../modules/local/ComputeSimilarities'
+include { COMPUTE_SIMILARITIES } from '../modules/local/computesimilarities'
 include { ExtractClosestGenbankRecords } from '../modules/local/ExtractClosestGenbankRecords'
 include { ExtractOrfsFromGenbank } from '../modules/local/ExtractOrfsFromGenbank'
 include { SplitClosestOrfs } from '../modules/local/SplitClosestOrfs'
@@ -34,7 +34,7 @@ workflow NOROTRACER {
         params.genbank_download_url,
     )
     
-    ch_sim = ComputeSimilarities(ch_samplesheet, downloaded_genbank.genbank_file)
+    ch_sim = COMPUTE_SIMILARITIES(ch_samplesheet, downloaded_genbank.genbank_file)
 
     ch_combined_csv = ch_sim.similarities
         .map { meta, csv -> csv.text.replace('\r\n', '\n') }
@@ -52,7 +52,7 @@ workflow NOROTRACER {
         params.similarity_topx,
     )
     
-    SplitClosestOrfs(ch_samplesheet.join(ch_sim), reduced_genbank.reduced_genbank)
+    SplitClosestOrfs(ch_samplesheet.join(ch_sim.similarities), reduced_genbank.reduced_genbank)
 
     ch_orf1_combined = SplitClosestOrfs.out.orf1s
         .flatMap { meta, files -> files }
@@ -132,7 +132,7 @@ workflow NOROTRACER {
         )
     emit:
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
-    similarities_csv = ComputeSimilarities.out.similarities
+    similarities_csv = COMPUTE_SIMILARITIES.out.similarities
     all_similarities_csv = ch_combined_csv
     reduced_genbank_file = reduced_genbank.reduced_genbank
     split_orf_output = combined_cons_orf

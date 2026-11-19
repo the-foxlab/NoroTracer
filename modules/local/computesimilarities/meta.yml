@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "computesimilarities"
+description: Compute pairwise aligned nucleotide identity between consensus genomes and every record of a multi-record GenBank file. Requires a container runtime (Docker, Apptainer or Singularity); execution with conda is not supported.
+keywords:
+  - similarity
+  - alignment
+  - genbank
+  - genomics
+tools:
+  - "compute_similarities.py":
+      description: "Pipeline script (bin/compute_similarities.py) that aligns each consensus FASTA record to each GenBank record with gb2seq (edlib aligner) and reports the nucleotide identity of the aligned sequences. Only available inside the container image ghcr.io/udogi/gb2seq-env; there is no conda environment for this module."
+      homepage: ""
+      documentation: ""
+      tool_dev_url: ""
+      doi: ""
+      licence: null
+      identifier: null
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information. e.g. `[
+          id:'sample1' ]`
+    - consensus_fasta:
+        type: file
+        description: FASTA file with the consensus genome(s) of the sample. Record IDs must be unique.
+        pattern: "*.{fasta,fa}"
+        ontologies:
+          - edam: "format_1929"
+  - genbank_file:
+      type: file
+      description: Multi-record GenBank file containing the candidate reference genomes. Record IDs must be unique.
+      pattern: "*.gb"
+      ontologies:
+        - edam: "format_1936"
+output:
+  similarities:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information. e.g. `[
+            id:'sample1' ]`
+      - similarities.csv:
+          type: file
+          description: CSV file with the columns consensus_id, genbank_id and identity (fraction of identical aligned positions), one row per consensus/reference pair.
+          pattern: "similarities.csv"
+          ontologies:
+            - edam: "format_3752"
+  versions_computesimilarities:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - compute_similarities.py:
+          type: string
+          description: The name of the tool
+      - compute_similarities.py --version:
+          type: eval
+          description: The expression to obtain the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - compute_similarities.py:
+          type: string
+          description: The name of the tool
+      - compute_similarities.py --version:
+          type: eval
+          description: The expression to obtain the version of the tool
+authors:
+  - "@UdoGi"
+maintainers:
+  - "@UdoGi"

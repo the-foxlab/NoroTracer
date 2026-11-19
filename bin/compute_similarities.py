@@ -20,6 +20,8 @@ from gb2seq.alignment import Gb2Alignment
 from gb2seq.features import Features
 
 
+__version__ = "0.1.0"
+
 LOGGER = logging.getLogger("compute_similarities")
 
 
@@ -67,6 +69,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 		action="store_true",
 		help="Enable debug logging.",
 	)
+	parser.add_argument(
+		"--version", 
+		action="version", 
+		version=__version__
+	)
+
 	return parser.parse_args(argv)
 
 
