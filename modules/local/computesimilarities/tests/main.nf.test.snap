@@ -1,0 +1,52 @@
+{
+    "compute_similarities.py function test": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "similarities.csv:md5,6a7d82398568d588d551fe8a2538b4eb"
+                    ]
+                ],
+                "1": [
+                    [
+                        "COMPUTE_SIMILARITIES",
+                        "compute_similarities.py",
+                        "0.1.0"
+                    ]
+                ],
+                "similarities": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "similarities.csv:md5,6a7d82398568d588d551fe8a2538b4eb"
+                    ]
+                ],
+                "versions_computesimilarities": [
+                    [
+                        "COMPUTE_SIMILARITIES",
+                        "compute_similarities.py",
+                        "0.1.0"
+                    ]
+                ]
+            },
+            {
+                "versions_computesimilarities": [
+                    [
+                        "COMPUTE_SIMILARITIES",
+                        "compute_similarities.py",
+                        "0.1.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-19T15:50:16.976238685",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.2"
+        }
+    }
+}

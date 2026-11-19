@@ -40,7 +40,7 @@ ENV/
 .ipynb_checkpoints/
 
 # OS/editor garbage
-.DS_Store
+*.DS_Store
 Thumbs.db
 
 # Temporary files
