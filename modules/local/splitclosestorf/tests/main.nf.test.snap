@@ -1,0 +1,125 @@
+{
+    "consensus fasta - similarity csv - genbank": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "split_orfs_orf1.fasta:md5,91f42efbc5511fd78776ba120a8753f6"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "split_orfs_orf2.fasta:md5,6ff90045c312bdde0df0f0162a570afd"
+                    ]
+                ],
+                "2": [
+                    [
+                        "SPLIT_CLOSEST_ORFS",
+                        "split_orfs.py",
+                        "0.1.0"
+                    ]
+                ],
+                "orf1s": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "split_orfs_orf1.fasta:md5,91f42efbc5511fd78776ba120a8753f6"
+                    ]
+                ],
+                "orf2s": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "split_orfs_orf2.fasta:md5,6ff90045c312bdde0df0f0162a570afd"
+                    ]
+                ],
+                "versions_splitclosestorf": [
+                    [
+                        "SPLIT_CLOSEST_ORFS",
+                        "split_orfs.py",
+                        "0.1.0"
+                    ]
+                ]
+            },
+            {
+                "versions_splitclosestorf": [
+                    [
+                        "SPLIT_CLOSEST_ORFS",
+                        "split_orfs.py",
+                        "0.1.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-23T14:15:04.261670656",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.3"
+        }
+    },
+    "consensus fasta - similarity csv - genbank - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "split_orfs_orf1.fasta:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "split_orfs_orf2.fasta:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        "SPLIT_CLOSEST_ORFS",
+                        "split_orfs.py",
+                        "0.1.0"
+                    ]
+                ],
+                "orf1s": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "split_orfs_orf1.fasta:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "orf2s": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "split_orfs_orf2.fasta:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions_splitclosestorf": [
+                    [
+                        "SPLIT_CLOSEST_ORFS",
+                        "split_orfs.py",
+                        "0.1.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-23T14:15:09.529646512",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.3"
+        }
+    }
+}

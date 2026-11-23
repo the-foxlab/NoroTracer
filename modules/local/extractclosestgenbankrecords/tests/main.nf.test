@@ -8,7 +8,7 @@ nextflow_process {
     tag "modules_local"
     tag "extractclosestgenbankrecords"
 
-    test("consensus fasta - similarity csv - genbank") {
+    test("bascic run with consensus fasta, similarity csv and genbank records") {
 
         when {
             params {
@@ -35,11 +35,14 @@ nextflow_process {
 
     }
 
-    test("consensus fasta - similarity csv - genbank - stub") {
+    test("bascic run with consensus fasta, similarity csv and genbank records  - stub") {
 
         options "-stub"
 
         when {
+            params {
+                similarity_topx = 2
+            }
             process {
                 """
                 input[0] = file("${projectDir}/tests/resources/similarities_small.csv", checkIfExists: true)

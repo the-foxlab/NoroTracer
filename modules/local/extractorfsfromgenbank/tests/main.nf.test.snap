@@ -1,0 +1,85 @@
+{
+    "extract orfs from genbank records - stub": {
+        "content": [
+            {
+                "0": [
+                    "reduced_references_orf1.fasta:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "1": [
+                    "reduced_references_orf2.fasta:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "2": [
+                    [
+                        "EXTRACT_ORFS_FROM_GENBANK",
+                        "extract_genbank_orfs.py",
+                        "0.1.0"
+                    ]
+                ],
+                "orf1s": [
+                    "reduced_references_orf1.fasta:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "orf2s": [
+                    "reduced_references_orf2.fasta:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "versions_extractorfsfromgenbank": [
+                    [
+                        "EXTRACT_ORFS_FROM_GENBANK",
+                        "extract_genbank_orfs.py",
+                        "0.1.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-23T14:14:57.052318494",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.3"
+        }
+    },
+    "extract orfs from genbank records": {
+        "content": [
+            {
+                "0": [
+                    "reduced_references_orf1.fasta:md5,1fedb4913d070404a8612fb3ddb62308"
+                ],
+                "1": [
+                    "reduced_references_orf2.fasta:md5,40dad604a61753e02cd978476836ef92"
+                ],
+                "2": [
+                    [
+                        "EXTRACT_ORFS_FROM_GENBANK",
+                        "extract_genbank_orfs.py",
+                        "0.1.0"
+                    ]
+                ],
+                "orf1s": [
+                    "reduced_references_orf1.fasta:md5,1fedb4913d070404a8612fb3ddb62308"
+                ],
+                "orf2s": [
+                    "reduced_references_orf2.fasta:md5,40dad604a61753e02cd978476836ef92"
+                ],
+                "versions_extractorfsfromgenbank": [
+                    [
+                        "EXTRACT_ORFS_FROM_GENBANK",
+                        "extract_genbank_orfs.py",
+                        "0.1.0"
+                    ]
+                ]
+            },
+            {
+                "versions_extractorfsfromgenbank": [
+                    [
+                        "EXTRACT_ORFS_FROM_GENBANK",
+                        "extract_genbank_orfs.py",
+                        "0.1.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-23T14:14:51.816166511",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.3"
+        }
+    }
+}
