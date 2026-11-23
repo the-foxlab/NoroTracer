@@ -39,6 +39,77 @@
             "nextflow": "26.10.3"
         }
     },
+    "bascic run with consensus fasta, similarity csv and genbank records": {
+        "content": [
+            {
+                "0": [
+                    "reduced_references.gb:md5,9fd8dae1152b308f8fcbca0a220d5575"
+                ],
+                "1": [
+                    [
+                        "EXTRACT_CLOSEST_GENBANK_RECORDS",
+                        "extract_closest_genbank_records.py",
+                        "0.1.0"
+                    ]
+                ],
+                "reduced_genbank": [
+                    "reduced_references.gb:md5,9fd8dae1152b308f8fcbca0a220d5575"
+                ],
+                "versions_extractclosestgenbankrecord": [
+                    [
+                        "EXTRACT_CLOSEST_GENBANK_RECORDS",
+                        "extract_closest_genbank_records.py",
+                        "0.1.0"
+                    ]
+                ]
+            },
+            {
+                "versions_extractclosestgenbankrecord": [
+                    [
+                        "EXTRACT_CLOSEST_GENBANK_RECORDS",
+                        "extract_closest_genbank_records.py",
+                        "0.1.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-23T15:07:45.237965687",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.2"
+        }
+    },
+    "bascic run with consensus fasta, similarity csv and genbank records  - stub": {
+        "content": [
+            {
+                "0": [
+                    "reduced_references.gb:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "1": [
+                    [
+                        "EXTRACT_CLOSEST_GENBANK_RECORDS",
+                        "extract_closest_genbank_records.py",
+                        "0.1.0"
+                    ]
+                ],
+                "reduced_genbank": [
+                    "reduced_references.gb:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "versions_extractclosestgenbankrecord": [
+                    [
+                        "EXTRACT_CLOSEST_GENBANK_RECORDS",
+                        "extract_closest_genbank_records.py",
+                        "0.1.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-23T15:07:49.797265146",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.2"
+        }
+    },
     "consensus fasta - similarity csv - genbank - stub": {
         "content": [
             {
