@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "extractorfsfromgenbank"
+description: Extract the annotated ORF1 and ORF2 CDS nucleotide sequences from every record of a multi-record GenBank file into one FASTA file per ORF. Requires a container runtime (Docker, Apptainer or Singularity); execution with conda is not supported.
+keywords:
+  - orf
+  - genbank
+  - cds
+  - genomics
+tools:
+  - "extract_genbank_orfs.py":
+      description: "Pipeline script (bin/extract_genbank_orfs.py) that finds the CDS feature annotated as ORF1 and ORF2 in each GenBank record and writes the sequences to combined FASTA files. Only available inside the container image ghcr.io/udogi/gb2seq-env; there is no conda environment for this module."
+      homepage: ""
+      documentation: ""
+      tool_dev_url: ""
+      doi: ""
+      licence: null
+      identifier: null
+
+input:
+  - genbank_file:
+      type: file
+      description: Multi-record GenBank file with annotated ORF1 and ORF2 CDS features. Each record may have at most one CDS per ORF.
+      pattern: "*.gb"
+      ontologies:
+        - edam: "format_1936"
+output:
+  orf1s:
+    - "*_orf1.fasta":
+        type: file
+        description: FASTA file with the ORF1 nucleotide sequence of each GenBank record.
+        pattern: "*_orf1.fasta"
+        ontologies:
+          - edam: "format_1929"
+  orf2s:
+    - "*_orf2.fasta":
+        type: file
+        description: FASTA file with the ORF2 nucleotide sequence of each GenBank record.
+        pattern: "*_orf2.fasta"
+        ontologies:
+          - edam: "format_1929"
+  versions_extractorfsfromgenbank:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - extract_genbank_orfs.py:
+          type: string
+          description: The name of the tool
+      - extract_genbank_orfs.py --version:
+          type: eval
+          description: The expression to obtain the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - extract_genbank_orfs.py:
+          type: string
+          description: The name of the tool
+      - extract_genbank_orfs.py --version:
+          type: eval
+          description: The expression to obtain the version of the tool
+authors:
+  - "@UdoGi"
+maintainers:
+  - "@UdoGi"

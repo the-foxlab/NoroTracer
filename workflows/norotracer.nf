@@ -9,8 +9,8 @@ include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pi
 include { DOWNLOAD_GENBANK } from '../modules/local/downloadgenbank'
 include { COMPUTE_SIMILARITIES } from '../modules/local/computesimilarities'
 include { EXTRACT_CLOSEST_GENBANK_RECORDS } from '../modules/local/extractclosestgenbankrecords'
-include { ExtractOrfsFromGenbank } from '../modules/local/ExtractOrfsFromGenbank'
-include { SplitClosestOrfs } from '../modules/local/SplitClosestOrfs'
+include { EXTRACT_ORFS_FROM_GENBANK } from '../modules/local/extractorfsfromgenbank'
+include { SPLIT_CLOSEST_ORFS } from '../modules/local/splitclosestorf'
 include { MAFFT_ALIGN } from '../modules/nf-core/mafft/align'
 include { IQTREE } from '../modules/nf-core/iqtree'
 /*
@@ -51,13 +51,13 @@ workflow NOROTRACER {
         downloaded_genbank.genbank_file,
     )
     
-    SplitClosestOrfs(ch_samplesheet.join(ch_sim.similarities), reduced_genbank.reduced_genbank)
+    SPLIT_CLOSEST_ORFS(ch_samplesheet.join(ch_sim.similarities), reduced_genbank.reduced_genbank)
 
-    ch_orf1_combined = SplitClosestOrfs.out.orf1s
+    ch_orf1_combined = SPLIT_CLOSEST_ORFS.out.orf1s
         .flatMap { meta, files -> files }
         .collectFile(name: 'all_orf1.fasta', newLine: true)
 
-    ch_orf2_combined = SplitClosestOrfs.out.orf2s
+    ch_orf2_combined = SPLIT_CLOSEST_ORFS.out.orf2s
         .flatMap { meta, files -> files }
         .collectFile(name: 'all_orf2.fasta',newLine: true)
 
@@ -69,7 +69,7 @@ workflow NOROTRACER {
     
     // get ORF1 and ORF2 from the redcued genbank file for alignment and tree building
     // this can already be a fasta file so i don't need the emboss step 
-    ch_gb_orfs = ExtractOrfsFromGenbank(reduced_genbank.reduced_genbank)
+    ch_gb_orfs = EXTRACT_ORFS_FROM_GENBANK(reduced_genbank.reduced_genbank)
 
     ch_orf1_with_ref = ch_gb_orfs.orf1s.concat(ch_orf1_combined)
         .collectFile(name: 'gb_and_cons_orf1.fasta', newLine: true)
@@ -95,10 +95,10 @@ workflow NOROTRACER {
     )
 
     combined_aln_ch = ch_orf_with_ref.mix(orf_aln.fas)
-    combined_cons_orf = SplitClosestOrfs.out.orf1s
+    combined_cons_orf = SPLIT_CLOSEST_ORFS.out.orf1s
         .map{ meta, file -> [meta + [orf: 'orf1'], file] }
         .mix(
-            SplitClosestOrfs.out.orf2s
+            SPLIT_CLOSEST_ORFS.out.orf2s
                 .map{ meta, file -> [meta + [orf: 'orf2'], file] }
         )
     //

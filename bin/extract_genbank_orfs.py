@@ -16,6 +16,7 @@ from split_orfs import ORF1_NAMES, ORF2_NAMES, output_path
 
 
 LOGGER = logging.getLogger("extract_genbank_orfs")
+__version__ = "0.1.0"
 ORF_QUALIFIERS = ("gene", "product", "note")
 
 
@@ -156,6 +157,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=Path("genbank_orfs"),
         help="Prefix for the ORF1 and ORF2 FASTA output files.",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=__version__,
     )
     return parser.parse_args(argv)
 

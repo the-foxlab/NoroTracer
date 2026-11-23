@@ -26,6 +26,7 @@ from gb2seq.features import Features
 
 
 LOGGER = logging.getLogger("split_orfs")
+__version__ = "0.1.0"
 
 
 def configure_logging(verbose: bool) -> None:
@@ -121,6 +122,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--verbose",
         action="store_true",
         help="Enable debug logging.",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=__version__,
     )
     return parser.parse_args(argv)
 

@@ -1,0 +1,89 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "splitclosestorf"
+description: Extract the ORF1 and ORF2 nucleotide sequences of consensus genomes by aligning each consensus to its closest GenBank reference (highest identity in the similarity CSV). Requires a container runtime (Docker, Apptainer or Singularity); execution with conda is not supported.
+keywords:
+  - orf
+  - genbank
+  - alignment
+  - genomics
+tools:
+  - "split_orfs.py":
+      description: "Pipeline script (bin/split_orfs.py) that looks up the closest GenBank reference of each consensus in a similarity CSV, aligns the consensus to it with gb2seq and cuts out the ORF1 and ORF2 sequences. Only available inside the container image ghcr.io/udogi/gb2seq-env; there is no conda environment for this module."
+      homepage: ""
+      documentation: ""
+      tool_dev_url: ""
+      doi: ""
+      licence: null
+      identifier: null
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information. e.g. `[
+          id:'sample1' ]`
+    - consensus_fasta:
+        type: file
+        description: FASTA file with the consensus genome(s) of the sample.
+        pattern: "*.{fasta,fa}"
+        ontologies:
+          - edam: "format_1929"
+    - similarity_csv:
+        type: file
+        description: CSV file with the columns consensus_id, genbank_id and identity, as written by the computesimilarities module. If a consensus has several rows, the one with the highest identity is used.
+        pattern: "*.csv"
+        ontologies:
+          - edam: "format_3752"
+  - genbank_file:
+      type: file
+      description: Multi-record GenBank file containing the reference genomes.
+      pattern: "*.gb"
+      ontologies:
+        - edam: "format_1936"
+output:
+  orf1s:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information. e.g. `[
+            id:'sample1' ]`
+      - "*_orf1.fasta":
+          type: file
+          description: FASTA file with the ORF1 nucleotide sequence(s) of the consensus genome(s).
+          pattern: "*_orf1.fasta"
+          ontologies:
+            - edam: "format_1929"
+  orf2s:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information. e.g. `[
+            id:'sample1' ]`
+      - "*_orf2.fasta":
+          type: file
+          description: FASTA file with the ORF2 nucleotide sequence(s) of the consensus genome(s).
+          pattern: "*_orf2.fasta"
+          ontologies:
+            - edam: "format_1929"
+  versions_splitclosestorf:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - split_orfs.py:
+          type: string
+          description: The name of the tool
+      - split_orfs.py --version:
+          type: eval
+          description: The expression to obtain the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - split_orfs.py:
+          type: string
+          description: The name of the tool
+      - split_orfs.py --version:
+          type: eval
+          description: The expression to obtain the version of the tool
+authors:
+  - "@UdoGi"
+maintainers:
+  - "@UdoGi"
