@@ -8,7 +8,7 @@ include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pi
 
 include { DOWNLOAD_GENBANK } from '../modules/local/downloadgenbank'
 include { COMPUTE_SIMILARITIES } from '../modules/local/computesimilarities'
-include { ExtractClosestGenbankRecords } from '../modules/local/ExtractClosestGenbankRecords'
+include { EXTRACT_CLOSEST_GENBANK_RECORDS } from '../modules/local/extractclosestgenbankrecords'
 include { ExtractOrfsFromGenbank } from '../modules/local/ExtractOrfsFromGenbank'
 include { SplitClosestOrfs } from '../modules/local/SplitClosestOrfs'
 include { MAFFT_ALIGN } from '../modules/nf-core/mafft/align'
@@ -45,11 +45,10 @@ workflow NOROTRACER {
         .collectFile(name: 'combined.fasta', newLine: true)
 
     // all channels should just contain one file 
-    reduced_genbank = ExtractClosestGenbankRecords(
+    reduced_genbank = EXTRACT_CLOSEST_GENBANK_RECORDS(
         ch_combined_csv.first(),
         ch_multifasta.first(),
         downloaded_genbank.genbank_file,
-        params.similarity_topx,
     )
     
     SplitClosestOrfs(ch_samplesheet.join(ch_sim.similarities), reduced_genbank.reduced_genbank)

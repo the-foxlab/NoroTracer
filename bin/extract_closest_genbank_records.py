@@ -20,6 +20,8 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
 
+__version__ = "0.1.0"
+
 LOGGER = logging.getLogger("extract_closest_genbank_records")
 
 
@@ -95,6 +97,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 		"--verbose",
 		action="store_true",
 		help="Enable debug logging.",
+	)
+	parser.add_argument(
+		"--version",
+		action="version",
+		version=__version__,
 	)
 	return parser.parse_args(argv)
 

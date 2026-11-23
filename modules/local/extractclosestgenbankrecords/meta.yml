@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "extractclosestgenbankrecords"
+description: Select the top-X most similar GenBank reference records per consensus genome from a similarity CSV and write the unique selected records to one GenBank file. Requires a container runtime (Docker, Apptainer or Singularity); execution with conda is not supported.
+keywords:
+  - similarity
+  - genbank
+  - reference selection
+  - genomics
+tools:
+  - "extract_closest_genbank_records.py":
+      description: "Pipeline script (bin/extract_closest_genbank_records.py) that filters a similarity CSV to the consensus IDs found in a FASTA file, keeps the top-X references per consensus by identity and extracts the matching records from a multi-record GenBank file. Only available inside the container image ghcr.io/udogi/gb2seq-env; there is no conda environment for this module."
+      homepage: ""
+      documentation: ""
+      tool_dev_url: ""
+      doi: ""
+      licence: null
+      identifier: null
+
+input:
+  - similarity_csv:
+      type: file
+      description: CSV file with the columns consensus_id, genbank_id and identity, as written by the computesimilarities module (combined over all samples).
+      pattern: "*.csv"
+      ontologies:
+        - edam: "format_3752"
+  - consensus_fasta:
+      type: file
+      description: FASTA file with all consensus genomes. Its record IDs select the rows of the similarity CSV.
+      pattern: "*.{fasta,fa}"
+      ontologies:
+        - edam: "format_1929"
+  - genbank_file:
+      type: file
+      description: Multi-record GenBank file from which the selected reference records are extracted.
+      pattern: "*.gb"
+      ontologies:
+        - edam: "format_1936"
+output:
+  reduced_genbank:
+    - reduced_references.gb:
+        type: file
+        description: GenBank file containing the unique top-X closest reference records.
+        pattern: "reduced_references.gb"
+        ontologies:
+          - edam: "format_1936"
+  versions_extractclosestgenbankrecords:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - extract_closest_genbank_records.py:
+          type: string
+          description: The name of the tool
+      - extract_closest_genbank_records.py --version:
+          type: eval
+          description: The expression to obtain the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - extract_closest_genbank_records.py:
+          type: string
+          description: The name of the tool
+      - extract_closest_genbank_records.py --version:
+          type: eval
+          description: The expression to obtain the version of the tool
+authors:
+  - "@UdoGi"
+maintainers:
+  - "@UdoGi"
